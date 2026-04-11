@@ -10,7 +10,7 @@ export default function PetsPage(){
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#FFF",
     flex: 1,
     alignItems: "center",
   }

@@ -10,6 +10,7 @@ export default function NovoCliente(){
         
         <View style={styles.container}>
 
+        
             <TextInput
                 placeholder='Nome'
                 style={styles.input}
@@ -34,7 +35,6 @@ export default function NovoCliente(){
 
                     clientes.push(novoCliente)
 
-                    console.log(clientes)
                 }}
                 >
                 <Text style={styles.buttonText}>Salvar</Text>
@@ -48,25 +48,26 @@ export default function NovoCliente(){
 const styles = StyleSheet.create({
     container:{
         flex: 1,
-        backgroundColor: "#fff",
+        backgroundColor: "#FFF",
         padding: 20
     },
 
     input:{
+        marginBottom: 10,
         borderWidth: 1,
-        borderColor: "#ccc",
+        borderColor: "#CCC",
         padding: 10,
-        borderRadius: 8
+        borderRadius: 6
     },
 
     button:{
         backgroundColor: "#015DAD",
         padding: 12,
-        borderRadius: 8,
+        borderRadius: 6,
         alignItems: "center"
     },
 
     buttonText:{
-        color: "#fff"
+        color: "#FFF"
     }    
 }) 
