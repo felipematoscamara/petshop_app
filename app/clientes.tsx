@@ -1,12 +1,12 @@
-import {TextInput,FlatList, StyleSheet, Text, TouchableOpacity, View} from 'react-native'
-import { Link, router } from 'expo-router'
+import { TextInput, FlatList, StyleSheet, Text, TouchableOpacity, View} from 'react-native'
+import { router } from 'expo-router'
 import { clientes } from './data/clientes'
 import { useState } from 'react'
 
 export default function ClientesPage(){
   const [busca, setBusca] = useState('')
   const clientesFiltrados = clientes.filter(cliente => cliente.nome?.toLowerCase().includes(busca.toLowerCase()))
-  
+
   return(
     <View style={styles.container}>
 
@@ -31,20 +31,22 @@ export default function ClientesPage(){
             )}
       </View>
 
-
       <View>
         <FlatList 
 
           data={clientesFiltrados}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <View style={{ margin: 10 }}>
-              <Link href="/components/ClienteIten">
-                <Text>{item.nome}</Text>
-                <Text>🐶🐱2 Pets</Text>
-              </Link>
-
-            </View>
+          renderItem={({ item }) =>(
+            <TouchableOpacity
+              onPress={() => router.push(`/clientesDetails/${item.id}`)}
+            >
+              <View style={{ margin: 10 }}>
+                
+                  <Text>{item.nome}</Text>
+                  <Text>🐶🐱2 Pets</Text>
+                
+              </View>
+            </TouchableOpacity>
 
           )}
         />

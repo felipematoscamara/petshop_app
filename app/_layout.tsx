@@ -12,7 +12,7 @@ export default function RootLayout() {
       <Stack.Screen name="pets" options={{headerTitle: "Pets"}}/>
       <Stack.Screen name="clientes" options={{headerTitle: "Clientes"}}/>
       <Stack.Screen name="clientes/novo" options={{headerTitle: "Cadastro de cliente"}}/>
-      <Stack.Screen name="components/ClienteIten" options={{headerTitle: "Cliente"}}/>
+      <Stack.Screen name="clientesDetails/[id]" options={{headerTitle: "Cliente"}}/>
     </Stack>
   );
 }

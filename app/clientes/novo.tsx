@@ -1,6 +1,7 @@
 import {View, StyleSheet, TextInput, TouchableOpacity, Text} from 'react-native'
 import { useState } from 'react'
 import { clientes } from '../data/clientes'
+import { gerarId } from '../data/clientes'
 
 export default function NovoCliente(){
     const [nome, setNome] = useState('')
@@ -29,6 +30,7 @@ export default function NovoCliente(){
                 style={styles.button}
                 onPress={() => {
                     const novoCliente={
+                        id: gerarId(),
                         nome: nome,
                         telefone: telefone
                     }
