@@ -2,10 +2,12 @@ import { TextInput, FlatList, StyleSheet, Text, TouchableOpacity, View} from 're
 import { router } from 'expo-router'
 import { clientes } from './data/clientes'
 import { useState } from 'react'
+import { pets } from './data/pets'
 
 export default function ClientesPage(){
   const [busca, setBusca] = useState('')
   const clientesFiltrados = clientes.filter(cliente => cliente.nome?.toLowerCase().includes(busca.toLowerCase()))
+  
 
   return(
     <View style={styles.container}>
@@ -36,19 +38,27 @@ export default function ClientesPage(){
 
           data={clientesFiltrados}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) =>(
-            <TouchableOpacity
-              onPress={() => router.push(`/clientesDetails/${item.id}`)}
-            >
-              <View style={{ margin: 10 }}>
-                
-                  <Text>{item.nome}</Text>
-                  <Text>🐶🐱2 Pets</Text>
-                
-              </View>
-            </TouchableOpacity>
+          renderItem={({ item }) =>{
 
-          )}
+            const quantidadePets = pets.filter(p => p.idCliente === item.id).length
+
+            return(
+              <TouchableOpacity
+                onPress={() => router.push(`/clientesDetails/${item.id}`)}
+              >
+                <View style={{ margin: 10, }}>
+                  
+                    <Text>
+                      {item.nome} {"\n"}
+                      🐶🐱 {quantidadePets} {quantidadePets === 1 ? "Pet" : "Pets"}
+                    </Text>
+                  
+                </View>
+              </TouchableOpacity>
+
+            )
+
+          }}
         />
       </View>
 

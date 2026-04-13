@@ -10,7 +10,6 @@ export default function NovoCliente(){
     return(
         
         <View style={styles.container}>
-
         
             <TextInput
                 placeholder='Nome'

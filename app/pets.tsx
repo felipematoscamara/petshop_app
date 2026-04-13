@@ -1,4 +1,4 @@
-import {StyleSheet, Text, View} from 'react-native'
+import {StyleSheet, View} from 'react-native'
 
 export default function PetsPage(){
   return(
@@ -10,8 +10,8 @@ export default function PetsPage(){
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#FFF",
     flex: 1,
-    alignItems: "center",
+    backgroundColor: "#FFF",
+    padding: 20
   }
 })

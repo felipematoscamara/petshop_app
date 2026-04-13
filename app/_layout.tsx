@@ -1,3 +1,4 @@
+import { HeaderTitle } from '@react-navigation/elements';
 import { Stack } from 'expo-router';
 //import { StatusBar } from 'expo-status-bar';
 
@@ -13,6 +14,8 @@ export default function RootLayout() {
       <Stack.Screen name="clientes" options={{headerTitle: "Clientes"}}/>
       <Stack.Screen name="clientes/novo" options={{headerTitle: "Cadastro de cliente"}}/>
       <Stack.Screen name="clientesDetails/[id]" options={{headerTitle: "Cliente"}}/>
+      <Stack.Screen name="pets/novo" options={{headerTitle: "Cadastro de pet"}}/>
+      <Stack.Screen name="petsDetails/[id]" options={{headerTitle: "Pet"}}/>
     </Stack>
   );
 }
