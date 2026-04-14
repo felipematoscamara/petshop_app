@@ -7,6 +7,8 @@ export default function NovoPet(){
   const {idCliente} = useLocalSearchParams()
   const [nome, setNome] = useState('')
   const [especie, setEspecie] = useState('')
+  const [raca, setRaca] = useState('')
+  const [sexo, setSexo] = useState('')
   const [nascimento, setNascimento] = useState('')
 
   function salvarPet(){
@@ -20,6 +22,8 @@ export default function NovoPet(){
       id: gerarPetId(),
       nome,
       especie,
+      raca,
+      sexo,
       nascimento,
       idCliente: Number(idCliente)
     }
@@ -42,6 +46,13 @@ export default function NovoPet(){
         style={styles.input}
         value={especie}
         onChangeText={setEspecie}
+      />
+
+      <TextInput
+        placeholder='Raça'
+        style={styles.input}
+        value={raca}
+        onChangeText={setRaca}
       />
 
       <TextInput

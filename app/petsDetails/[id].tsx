@@ -1,5 +1,5 @@
-import {StyleSheet, View, Text} from 'react-native'
-import { useLocalSearchParams } from 'expo-router'
+import {StyleSheet, View, Text, TouchableOpacity} from 'react-native'
+import { useLocalSearchParams, router } from 'expo-router'
 import { pets } from '../data/pets'
 
 export default function Details(){
@@ -7,14 +7,30 @@ export default function Details(){
     const pet = pets.find(p => p.id == id)
 
     if(!pet){
-        return <Text>Pet não encontrado</Text>
+        return(
+          <View style={styles.container}>Pet não encontrado</View>
+        )
     }
     
     return(
         <View style={styles.container}>
             <Text>Nome: {pet.nome}</Text>
-            <Text>Tipo: {pet.especie}</Text>
+            <Text>Especie: {pet.especie}</Text>
+            <Text>Raça: {pet.raca}</Text>
             <Text>Nascimento: {pet.nascimento}</Text>
+
+            <TouchableOpacity
+              onPress={() => router.push(`/petServices/vacinas/${pet.id}`)}
+            >
+              <Text>Cartão de vacinas</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => router.push(`/petServices/banhoTosa/${pet.id}`)}
+            >
+              <Text>Banho e Tosa</Text>
+            </TouchableOpacity>
+
             <Text>ID: {pet.id}</Text>
         </View>
   )

@@ -16,6 +16,8 @@ export default function RootLayout() {
       <Stack.Screen name="clientesDetails/[id]" options={{headerTitle: "Cliente"}}/>
       <Stack.Screen name="pets/novo" options={{headerTitle: "Cadastro de pet"}}/>
       <Stack.Screen name="petsDetails/[id]" options={{headerTitle: "Pet"}}/>
+      <Stack.Screen name="petServices/vacinas/[id]" options={{headerTitle: "Cartão de vacinas"}}/>
+      <Stack.Screen name="petServices/banhoTosa/[id]" options={{headerTitle: "Banho e Tosa"}}/>
     </Stack>
   );
 }
