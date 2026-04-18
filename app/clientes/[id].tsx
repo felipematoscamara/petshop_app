@@ -25,7 +25,7 @@ export default function Details(){
                 {petsDoCliente.map((pet) => (
                     <TouchableOpacity 
                         key={pet.id}
-                        onPress={() => router.push(`/petsDetails/${pet.id}`)}
+                        onPress={() => router.push(`/pets/${pet.id}`)}
                     >
                         <Text key={pet.id}>
                             🐾 {pet.nome}

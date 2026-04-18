@@ -1,6 +1,6 @@
 import {StyleSheet, View} from 'react-native'
 
-export default function PetsPage(){
+export default function RegistroBanhoTosa(){
   return(
     <View style={styles.container}>
       

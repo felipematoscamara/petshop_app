@@ -10,7 +10,7 @@ type Vacina = {
   proxima: string
 }
 
-export default function Vacinas(){
+export default function NovaVacina(){
   const {id} = useLocalSearchParams()
   const pet = pets.find(p => p.id == id)
 
@@ -22,8 +22,9 @@ export default function Vacinas(){
   const[listaVacinas, setListaVacinas] = useState<Vacina[]>([]) 
   
   function salvarVacina(){
-    if(!vacina || !dose || !data) return
-    
+    if(!vacina || !dose || !data) {
+      return
+    }
     
     const novaVacina = {
       vacina,
@@ -39,12 +40,6 @@ export default function Vacinas(){
     setData('')
     setProxima('')
   }
-  
-  function verificarESalvar(){
-    if(vacina && dose && data){
-      salvarVacina()
-    }
-  }
 
   if(!pet){
     return <View style={styles.container}>Pet não encontrado</View>
@@ -52,8 +47,6 @@ export default function Vacinas(){
 
   return(
     <View style={styles.container}>
-
-      <Text>Cartão de vacinas</Text>
 
       <View style={{flexDirection: "row", gap: 5, marginTop: 10}}>
 
@@ -89,10 +82,21 @@ export default function Vacinas(){
         <TextInput
           value={proxima}
           onChangeText={setProxima}
-          onSubmitEditing={verificarESalvar}
           style={styles.input}
         />
       </View>
+
+
+    </View>
+
+    <View style={{marginTop: 10}}>
+
+      <TouchableOpacity
+        onPress={salvarVacina}
+        style={styles.button}
+      >
+        <Text style={styles.buttonText}>Salvar</Text>
+      </TouchableOpacity>
 
     </View>
 
@@ -116,9 +120,22 @@ const styles = StyleSheet.create({
   },
 
   input:{
-    borderWidth: 1,
-    borderColor: '#999',
-    padding: 6,
-    height: 40
+  borderWidth: 1,
+  borderColor: '#ccc',
+  padding: 10,
+  height: 50,
+  borderRadius: 6,
+  backgroundColor: '#f9f9f9'
+  },
+
+  button:{
+    backgroundColor: '#015DAD',
+    padding: 12,
+    borderRadius: 6,
+    alignItems: 'center'
+  },
+
+  buttonText:{
+    color: '#FFF'
   }
 })

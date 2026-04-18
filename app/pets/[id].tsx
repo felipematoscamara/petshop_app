@@ -20,13 +20,13 @@ export default function Details(){
             <Text>Nascimento: {pet.nascimento}</Text>
 
             <TouchableOpacity
-              onPress={() => router.push(`/petServices/vacinas/${pet.id}`)}
+              onPress={() => router.push(`/services/vacinas?id=${pet.id}`)}
             >
               <Text>Cartão de vacinas</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => router.push(`/petServices/banhoTosa/${pet.id}`)}
+              onPress={() => router.push(`/services/banhoTosa?id=${pet.id}`)}
             >
               <Text>Banho e Tosa</Text>
             </TouchableOpacity>
