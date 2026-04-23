@@ -1,11 +1,13 @@
-import {View, StyleSheet, TextInput, TouchableOpacity, Text} from 'react-native'
+import { View, StyleSheet, TextInput, TouchableOpacity, Text} from 'react-native'
 import { useState } from 'react'
 import { clientes } from '../data/clientes'
 import { gerarId } from '../data/clientes'
+import { router } from 'expo-router'
 
 export default function NovoCliente(){
     const [nome, setNome] = useState('')
     const [telefone, setTelefone] = useState('')
+    const [endereco, setEndereco] = useState('')
 
     return(
         
@@ -25,17 +27,25 @@ export default function NovoCliente(){
                 onChangeText={setTelefone}
                 />
 
+            <TextInput
+                placeholder='Endereço'
+                style={styles.input}
+                value={endereco}
+                onChangeText={setEndereco}
+                />
+
             <TouchableOpacity 
                 style={styles.button}
                 onPress={() => {
                     const novoCliente={
                         id: gerarId(),
                         nome: nome,
-                        telefone: telefone
+                        telefone: telefone,
+                        endereco: endereco
                     }
 
                     clientes.push(novoCliente)
-
+                    router.back()
                 }}
                 >
                 <Text style={styles.buttonText}>Salvar</Text>

@@ -25,9 +25,11 @@ export default function NovoPet(){
       raca,
       sexo,
       nascimento,
-      idCliente: Number(idCliente)
+      idCliente: idCliente
     }
     pets.push(novoPet)
+
+    router.back()
   }
 
 

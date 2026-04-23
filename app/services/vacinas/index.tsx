@@ -1,13 +1,43 @@
-import { router, useLocalSearchParams } from 'expo-router'
-import {StyleSheet, View, TouchableOpacity, Text} from 'react-native'
+import { router, useLocalSearchParams, useFocusEffect } from 'expo-router'
+import { StyleSheet, View, TouchableOpacity, Text, FlatList } from 'react-native'
 import { pets } from '../../data/pets'
+import { vacinas } from '@/app/data/vacinas'
+import { useState, useCallback } from 'react'
 
 export default function CartaoDeVacinas(){
   const {id} = useLocalSearchParams()
-  const pet = pets.find(p => p.id == id)
+  const pet = pets.find(p => p.id === id)
+  const [listaVacinas, setListaVacinas] = useState(vacinas)
 
+  useFocusEffect(
+    useCallback(() => {
+      setListaVacinas([...vacinas])
+    }, [])
+  )
+
+  const vacinasDoPet = listaVacinas.filter(
+    v => v.idPet === id
+  )
+
+  if(!pet){
+    return <View style={styles.container}>Pet não encontrado</View>
+  }
+  
   return(
-    <View style={styles.container}>
+    <View style={styles.container}>    
+
+      <FlatList
+        data={vacinasDoPet}
+        keyExtractor={(item, index) => index.toString()}
+        renderItem={({item}) => (
+          <View style={{margin: 10}}>
+            <Text>{item.vacina}</Text>
+            <Text>{item.dose}</Text>
+            <Text>{item.data}</Text>
+            <Text>{item.proxima}</Text>
+          </View>
+        )}
+      />
 
       <TouchableOpacity
         style={styles.button}

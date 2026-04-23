@@ -1,15 +1,27 @@
-import { useLocalSearchParams } from "expo-router"
+import { useLocalSearchParams, useFocusEffect } from "expo-router"
 import {StyleSheet, Text, View, TouchableOpacity} from 'react-native'
 import { clientes } from "../data/clientes"
 import { router } from "expo-router"
 import { pets } from "../data/pets"
+import { useCallback, useState } from "react"
 
-export default function Details(){
+export default function Cliente(){
     const {id} = useLocalSearchParams()
-    const cliente = clientes.find(c => String(c.id) === String(id))
-    const petsDoCliente = pets.filter(p => p.idCliente == id)
 
-    if (!cliente){
+    const [clienteAtual, setClienteAtual] = useState(clientes.find(c => c.id === id))
+    const [listaPets, setListaPets] = useState(pets.filter(p => p.idCliente == id))
+
+    useFocusEffect(
+        useCallback(() => {
+            const clienteAtualizado = clientes.find(c => c.id === id)
+            setClienteAtual(clienteAtualizado)
+
+            const petsAtualizados = pets.filter(p => p.idCliente == id)
+            setListaPets(petsAtualizados)
+        }, [id])
+    )
+
+    if (!clienteAtual){
         return(
             <View style={styles.container}>Cliente não encontrado</View>
         )
@@ -20,9 +32,11 @@ export default function Details(){
         <View style={styles.container}>
 
             <View>
-                <Text>{cliente.nome}{"\n"}{cliente.telefone}</Text>
+                <Text>{clienteAtual.nome}</Text>
+                <Text>{clienteAtual.telefone}</Text>
+                <Text>{clienteAtual.endereco}</Text>
                 
-                {petsDoCliente.map((pet) => (
+                {listaPets.map((pet) => (
                     <TouchableOpacity 
                         key={pet.id}
                         onPress={() => router.push(`/pets/${pet.id}`)}
@@ -32,7 +46,7 @@ export default function Details(){
                         </Text>
                     </TouchableOpacity>
                 ))}
-                <Text>ID: {cliente.id}</Text>
+                <Text>ID: {clienteAtual.id}</Text>
             </View>
 
             <TouchableOpacity
@@ -54,7 +68,10 @@ const styles = StyleSheet.create({
     },
 
     button:{
-        marginTop: 10,
+        position: "absolute",
+        bottom: 20,
+        left: 20,
+        right: 20,
         backgroundColor: "#015DAD",
         padding: 12,
         borderRadius: 6,

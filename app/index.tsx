@@ -1,14 +1,19 @@
 import { TextInput, FlatList, StyleSheet, Text, TouchableOpacity, View} from 'react-native'
-import { router } from 'expo-router'
+import { router, useFocusEffect } from 'expo-router'
 import { clientes } from './data/clientes'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { pets } from './data/pets'
 
 export default function ClientesPage(){
   const [busca, setBusca] = useState('')
-  const clientesFiltrados = clientes.filter(cliente => cliente.nome?.toLowerCase().includes(busca.toLowerCase()))
-  
+  const [listaClientes, setListaClientes] = useState(clientes)
+  const clientesFiltrados = listaClientes.filter(cliente => cliente.nome?.toLowerCase().includes(busca.toLowerCase()))
 
+  useFocusEffect(
+    useCallback(() => {
+      setListaClientes([...clientes])
+    }, [])
+  )
   return(
     <View style={styles.container}>
 
@@ -33,41 +38,40 @@ export default function ClientesPage(){
             )}
       </View>
 
-      <View>
-        <FlatList 
+      <FlatList 
+        data={clientesFiltrados}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) =>{
 
-          data={clientesFiltrados}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) =>{
+        const petsPorCliente = pets.reduce((acc, pet) => {
+          acc[pet.idCliente] = (acc[pet.idCliente] || 0) + 1 
+          return acc
+        }, {})
 
-            const quantidadePets = pets.filter(p => p.idCliente === item.id).length
+        const quantidadePets = petsPorCliente[item.id] || 0
 
-            return(
-              <TouchableOpacity
-                onPress={() => router.push(`/clientes/${item.id}`)}
-              >
-                <View style={{ margin: 10, }}>
-                  
-                    <Text>
-                      {item.nome} {"\n"}
-                      🐶🐱 {quantidadePets} {quantidadePets === 1 ? "Pet" : "Pets"}
-                    </Text>
-                  
-                </View>
-              </TouchableOpacity>
+        return(
+          <TouchableOpacity
+            onPress={() => router.push(`/clientes/${item.id}`)}
+          >
+            
+            <View style={{ margin: 10, }}>
+              <Text>
+                {item.nome} {"\n"}
+                🐶🐱 {quantidadePets} {quantidadePets === 1 ? "Pet" : "Pets"}
+              </Text>
+            </View>
 
-            )
-
-          }}
-        />
-      </View>
-
-        <TouchableOpacity
-            style={styles.button}
-            onPress={() => router.push("/clientes/novo")}
-            >
-            <Text style={styles.buttonText}>Novo Cliente</Text>
-        </TouchableOpacity>
+          </TouchableOpacity>
+        )}}
+      />
+      
+      <TouchableOpacity
+          style={styles.button}
+          onPress={() => router.push("/clientes/novo")}
+      >
+        <Text style={styles.buttonText}>Novo Cliente</Text>
+      </TouchableOpacity>
 
     </View>
   )
@@ -81,10 +85,14 @@ const styles = StyleSheet.create({
   },
   
   button:{
-    backgroundColor: "#015DAD",
-    padding: 12,
-    borderRadius: 6,
-    alignItems: "center"
+    position: "absolute",
+  bottom: 20,
+  left: 20,
+  right: 20,
+  backgroundColor: "#015DAD",
+  padding: 12,
+  borderRadius: 6,
+  alignItems: "center"
   },
 
   buttonText:{

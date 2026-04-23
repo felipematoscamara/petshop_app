@@ -4,7 +4,7 @@ import { pets } from '../data/pets'
 
 export default function Details(){
     const {id} = useLocalSearchParams()
-    const pet = pets.find(p => p.id == id)
+    const pet = pets.find(p => p.id === id)
 
     if(!pet){
         return(
