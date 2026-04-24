@@ -1,9 +1,8 @@
-import { StyleSheet, View, Text, TextInput, TouchableOpacity } from 'react-native'
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, Alert } from 'react-native'
 import { useState } from 'react'
 import { useLocalSearchParams, router } from 'expo-router'
 import { pets } from '@/app/data/pets'
-import { vacinas } from '@/app/data/vacinas'
-import { gerarVacinaId } from '@/app/data/vacinas'
+import { gerarVacinaId, vacinas } from '@/app/data/vacinas'
 
 export default function NovaVacina(){
   const {id} = useLocalSearchParams()
@@ -16,9 +15,9 @@ export default function NovaVacina(){
   
   function salvarVacina(){
     if(!vacina || !dose || !data) {
-      alert('Preencha os campos obrigatórios')
+      Alert.alert('Erro','Preencha os campos obrigatórios')
       return
-    }
+  }
     
     const novaVacina = {
       id: gerarVacinaId(),

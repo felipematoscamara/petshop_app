@@ -58,10 +58,14 @@ const styles = StyleSheet.create({
   },
 
   button:{
+    position: "absolute",
     backgroundColor: '#015DAD',
     padding: 12,
     borderRadius: 6,
-    alignItems: 'center'
+    alignItems: 'center',
+    bottom: 20,
+    left: 20,
+    right: 20
   },
 
   buttonText:{

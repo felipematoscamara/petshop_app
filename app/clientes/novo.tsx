@@ -8,6 +8,7 @@ export default function NovoCliente(){
     const [nome, setNome] = useState('')
     const [telefone, setTelefone] = useState('')
     const [endereco, setEndereco] = useState('')
+    const [pontos] = useState('')
 
     return(
         
@@ -41,7 +42,8 @@ export default function NovoCliente(){
                         id: gerarId(),
                         nome: nome,
                         telefone: telefone,
-                        endereco: endereco
+                        endereco: endereco,
+                        pontos: 0
                     }
 
                     clientes.push(novoCliente)
