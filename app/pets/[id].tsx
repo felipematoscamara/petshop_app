@@ -8,14 +8,16 @@ export default function Details(){
 
     if(!pet){
         return(
-          <View style={styles.container}>Pet não encontrado</View>
+          <View style={styles.container}>
+            <Text>Pet não encontrado</Text>
+          </View>
         )
     }
     
     return(
         <View style={styles.container}>
             <Text>Nome: {pet.nome}</Text>
-            <Text>Especie: {pet.especie}</Text>
+            <Text>Espécie: {pet.especie}</Text>
             <Text>Raça: {pet.raca}</Text>
             <Text>Nascimento: {pet.nascimento}</Text>
 

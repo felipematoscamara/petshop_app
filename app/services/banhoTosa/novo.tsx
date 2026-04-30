@@ -31,7 +31,7 @@ export default function NovoServico(){
 
       servicos.push({
         id: gerarServicoId(),
-        servico: 'banho',
+        servico: 'Banho',
         data: dataAtual,
         pontos,
         idPet: pet.id,
@@ -46,7 +46,7 @@ export default function NovoServico(){
 
       servicos.push({
         id: gerarServicoId(),
-        servico: 'tosa',
+        servico: 'Tosa',
         data: dataAtual,
         pontos,
         idPet: pet.id,

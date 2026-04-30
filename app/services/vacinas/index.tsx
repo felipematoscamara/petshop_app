@@ -20,7 +20,11 @@ export default function CartaoDeVacinas(){
   )
 
   if(!pet){
-    return <View style={styles.container}>Pet não encontrado</View>
+    return(
+      <View style={styles.container}>
+        <Text>Pet não encontrado</Text>
+      </View>
+    )
   }
   
   return(
@@ -28,7 +32,7 @@ export default function CartaoDeVacinas(){
 
       <FlatList
         data={vacinasDoPet}
-        keyExtractor={(item, index) => index.toString()}
+        keyExtractor={(item) => item.id}
         renderItem={({item}) => (
           <View style={{margin: 10}}>
             <Text>{item.vacina}</Text>
@@ -37,7 +41,13 @@ export default function CartaoDeVacinas(){
             <Text>{item.proxima}</Text>
           </View>
         )}
+        contentContainerStyle={{ paddingBottom: 50 }}
+
+        ListEmptyComponent={
+          <Text>Nenhuma vacina cadastrada</Text>
+        }
       />
+
 
       <TouchableOpacity
         style={styles.button}

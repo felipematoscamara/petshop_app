@@ -64,6 +64,7 @@ export default function ClientesPage(){
 
           </TouchableOpacity>
         )}}
+        contentContainerStyle={{ paddingBottom: 50 }}
       />
       
       <TouchableOpacity
