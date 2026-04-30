@@ -2,6 +2,7 @@ import {StyleSheet, Text, View, TextInput, TouchableOpacity} from 'react-native'
 import { useState } from 'react'
 import { useLocalSearchParams, router } from 'expo-router'
 import { pets, gerarPetId } from '../data/pets'
+import Header from '../components/Header'
 
 export default function NovoPet(){
   const {idCliente} = useLocalSearchParams()
@@ -34,42 +35,50 @@ export default function NovoPet(){
 
 
   return(
-    <View style={styles.container}>
+    <View style={{flex: 1}}>
 
-      <TextInput
-        placeholder='Nome'
-        style={styles.input}
-        value={nome}
-        onChangeText={setNome}
-      />
+      <View>
+        <Header titulo='Novo Pet'/>
+      </View>
 
-      <TextInput
-        placeholder='Especie'
-        style={styles.input}
-        value={especie}
-        onChangeText={setEspecie}
-      />
+      <View style={styles.container}>
 
-      <TextInput
-        placeholder='Raça'
-        style={styles.input}
-        value={raca}
-        onChangeText={setRaca}
-      />
+        <TextInput
+          placeholder='Nome'
+          style={styles.input}
+          value={nome}
+          onChangeText={setNome}
+        />
 
-      <TextInput
-        placeholder='Nascimento'
-        style={styles.input}
-        value={nascimento}
-        onChangeText={setNascimento}
-      />
+        <TextInput
+          placeholder='Especie'
+          style={styles.input}
+          value={especie}
+          onChangeText={setEspecie}
+        />
 
-      <TouchableOpacity 
-      style={styles.button}
-      onPress={salvarPet}
-      >
-        <Text style={styles.buttonText}>Salvar</Text>
-      </TouchableOpacity>
+        <TextInput
+          placeholder='Raça'
+          style={styles.input}
+          value={raca}
+          onChangeText={setRaca}
+        />
+
+        <TextInput
+          placeholder='Nascimento'
+          style={styles.input}
+          value={nascimento}
+          onChangeText={setNascimento}
+        />
+
+        <TouchableOpacity 
+        style={styles.button}
+        onPress={salvarPet}
+        >
+          <Text style={styles.buttonText}>Salvar</Text>
+        </TouchableOpacity>
+        
+      </View>
 
     </View>
   )

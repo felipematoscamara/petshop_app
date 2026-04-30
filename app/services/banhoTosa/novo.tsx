@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { gerarServicoId, servicos } from '@/app/data/servicos'
 import { clientes } from '@/app/data/clientes'
 import { router } from 'expo-router'
+import Header from '@/app/components/Header'
 
 export default function NovoServico(){
   const {id} = useLocalSearchParams()
@@ -60,34 +61,42 @@ export default function NovoServico(){
   }
 
   return(
-    <View style={styles.container}>
+    <View style={{flex: 1}}>
 
-      <TextInput
-        placeholder='Data'
-        value={data}
-        onChangeText={setData}
-        style={{
-          borderWidth: 1,
-          padding: 8,
-          borderColor: '#CCC',
-          marginBottom: 10
-        }}
-      />
-      
-      <TouchableOpacity onPress={() => setBanho(!banho)}>
-        <Text>{banho ? '[X]' : '[  ]'} Banho</Text>
-      </TouchableOpacity>
+      <View>
+        <Header titulo='Novo Serviço'/>
+      </View>
 
-      <TouchableOpacity onPress={() => setTosa(!tosa)}>
-        <Text>{tosa ? '[X]' : '[  ]'} Tosa</Text>
-      </TouchableOpacity>
+      <View style={styles.container}>
 
-      <TouchableOpacity
-        style={styles.button} 
-        onPress={registrarServico}
-      >
-        <Text style={styles.buttonText}>Registrar</Text>
-      </TouchableOpacity>
+        <TextInput
+          placeholder='Data'
+          value={data}
+          onChangeText={setData}
+          style={{
+            borderWidth: 1,
+            padding: 8,
+            borderColor: '#CCC',
+            marginBottom: 10
+          }}
+        />
+        
+        <TouchableOpacity onPress={() => setBanho(!banho)}>
+          <Text>{banho ? '[X]' : '[  ]'} Banho</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => setTosa(!tosa)}>
+          <Text>{tosa ? '[X]' : '[  ]'} Tosa</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.button} 
+          onPress={registrarServico}
+        >
+          <Text style={styles.buttonText}>Registrar</Text>
+        </TouchableOpacity>
+        
+      </View>
 
     </View>
   )

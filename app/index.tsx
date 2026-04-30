@@ -3,6 +3,7 @@ import { router, useFocusEffect } from 'expo-router'
 import { clientes } from './data/clientes'
 import { useCallback, useState } from 'react'
 import { pets } from './data/pets'
+import HeaderHome from './components/HeaderHome'
 
 export default function ClientesPage(){
   const [busca, setBusca] = useState('')
@@ -15,64 +16,72 @@ export default function ClientesPage(){
     }, [])
   )
   return(
-    <View style={styles.container}>
+    <View style={{flex: 1}}>
 
       <View>
-        <TextInput
-            placeholder='Buscar cliente...'
-            value={busca}
-            onChangeText={setBusca}
-            
-            style={{
-              flex: 1,
-              borderWidth: 1,
-              marginBottom: 10,
-              padding: 8,
-              borderRadius: 6,
-              borderColor: "#CCC"
-            }}
-            />
-
-            {clientesFiltrados.length === 0 && (
-              <Text style={{margin: 10}}>Nenhum cliente encontrado</Text>
-            )}
+        <HeaderHome titulo='PetShop Manager'/>
       </View>
 
-      <FlatList 
-        data={clientesFiltrados}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) =>{
+      <View style={styles.container}>
 
-        const petsPorCliente = pets.reduce((acc, pet) => {
-          acc[pet.idCliente] = (acc[pet.idCliente] || 0) + 1 
-          return acc
-        }, {})
+        <View>
+          <TextInput
+              placeholder='🔎 Buscar cliente...'
+              value={busca}
+              onChangeText={setBusca}
+              
+              style={{
+                flex: 1,
+                borderWidth: 1,
+                marginBottom: 10,
+                padding: 8,
+                borderRadius: 6,
+                borderColor: "#CCC"
+              }}
+              />
 
-        const quantidadePets = petsPorCliente[item.id] || 0
+              {clientesFiltrados.length === 0 && (
+                <Text style={{margin: 10}}>Nenhum cliente encontrado</Text>
+              )}
+        </View>
 
-        return(
-          <TouchableOpacity
-            onPress={() => router.push(`/clientes/${item.id}`)}
-          >
-            
-            <View style={{ margin: 10, }}>
-              <Text>
-                {item.nome} {"\n"}
-                🐶🐱 {quantidadePets} {quantidadePets === 1 ? "Pet" : "Pets"}
-              </Text>
-            </View>
+        <FlatList 
+          data={clientesFiltrados}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) =>{
 
-          </TouchableOpacity>
-        )}}
-        contentContainerStyle={{ paddingBottom: 50 }}
-      />
-      
-      <TouchableOpacity
-          style={styles.button}
-          onPress={() => router.push("/clientes/novo")}
-      >
-        <Text style={styles.buttonText}>Novo Cliente</Text>
-      </TouchableOpacity>
+          const petsPorCliente = pets.reduce((acc, pet) => {
+            acc[pet.idCliente] = (acc[pet.idCliente] || 0) + 1 
+            return acc
+          }, {})
+
+          const quantidadePets = petsPorCliente[item.id] || 0
+
+          return(
+            <TouchableOpacity
+              onPress={() => router.push(`/clientes/${item.id}`)}
+            >
+              
+              <View style={{ margin: 10, }}>
+                <Text>
+                  {item.nome} {"\n"}
+                  🐶🐱 {quantidadePets} {quantidadePets === 1 ? "Pet" : "Pets"}
+                </Text>
+              </View>
+
+            </TouchableOpacity>
+          )}}
+          contentContainerStyle={{ paddingBottom: 50 }}
+        />
+        
+        <TouchableOpacity
+            style={styles.button}
+            onPress={() => router.push("/clientes/novo")}
+        >
+          <Text style={styles.buttonText}>Novo Cliente</Text>
+        </TouchableOpacity>
+
+      </View>
 
     </View>
   )
@@ -87,13 +96,13 @@ const styles = StyleSheet.create({
   
   button:{
     position: "absolute",
-  bottom: 20,
-  left: 20,
-  right: 20,
-  backgroundColor: "#015DAD",
-  padding: 12,
-  borderRadius: 6,
-  alignItems: "center"
+    bottom: 20,
+    left: 20,
+    right: 20,
+    backgroundColor: "#015DAD",
+    padding: 12,
+    borderRadius: 6,
+    alignItems: "center"
   },
 
   buttonText:{

@@ -3,6 +3,7 @@ import {StyleSheet, View, TouchableOpacity, Text, FlatList} from 'react-native'
 import { pets } from '@/app/data/pets'
 import { useCallback, useState } from 'react'
 import { servicos } from '@/app/data/servicos'
+import Header from '@/app/components/Header'
 
 export default function banhoTosa(){
   const {id} = useLocalSearchParams()
@@ -28,30 +29,43 @@ export default function banhoTosa(){
   }
 
   return(
-    <View style={styles.container}>
+    <View style={{flex: 1}}>
 
-      <FlatList
-        data={servicosDoPet}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={{margin: 10}}>
-            <Text>{item.servico}</Text>
-            <Text>{new Date(item.data).toLocaleString('pt-BR')}</Text>
-            <Text>Pontos: {item.pontos}</Text>
-          </View>
-        )}
-        contentContainerStyle={{ paddingBottom: 50 }}
-      />
-      
+      <View>
+        <Header titulo='Serviços'/>
+      </View>
 
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() => router.push(`/services/banhoTosa/novo?id=${pet.id}`)}
-      >
-        <Text style={styles.buttonText}>Novo Serviço</Text>
-      </TouchableOpacity>
+      <View style={styles.container}>
+
+        <FlatList
+          data={servicosDoPet}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <View style={{margin: 10}}>
+              <Text>{item.servico}</Text>
+              <Text>{new Date(item.data).toLocaleString('pt-BR')}</Text>
+              <Text>Pontos: {item.pontos}</Text>
+            </View>
+          )}
+          contentContainerStyle={{ paddingBottom: 50 }}
+
+          ListEmptyComponent={
+            <Text>Nenhum serviço cadastrado</Text>
+          }
+        />
+
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => router.push(`/services/banhoTosa/novo?id=${pet.id}`)}
+        >
+          <Text style={styles.buttonText}>Novo Serviço</Text>
+        </TouchableOpacity>
+
+      </View>
+
     </View>
   )
+
 }
 
 const styles = StyleSheet.create({

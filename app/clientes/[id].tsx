@@ -5,6 +5,7 @@ import { router } from "expo-router"
 import { pets } from "../data/pets"
 import { useCallback, useState } from "react"
 import { servicos } from "../data/servicos"
+import Header from "../components/Header"
 
 export default function Cliente(){
     const {id} = useLocalSearchParams()
@@ -49,53 +50,62 @@ export default function Cliente(){
     }
 
     return(
-        <View style={styles.container}>
+        <View style={{flex: 1}}>
 
-           <FlatList
-                data={listaPets}
-                keyExtractor={(item) => item.id}
+            <View>
+                <Header titulo="Cliente"/>
+            </View>
 
-                ListHeaderComponent={
-                    <View>
-                        <Text>{clienteAtual.nome} ⭐{totalPontos}</Text>
-                        <Text>{clienteAtual.telefone}</Text>
-                        <Text>{clienteAtual.endereco}</Text>
+            <View style={styles.container}>
 
+                <FlatList
+                    data={listaPets}
+                    keyExtractor={(item) => item.id}
+
+                    ListHeaderComponent={
+                        <View>
+                            <Text>{clienteAtual.nome} ⭐{totalPontos}</Text>
+                            <Text>{clienteAtual.telefone}</Text>                                <Text>{clienteAtual.endereco}</Text>
+
+                            <Text>
+                                Pets cadastrados:
+                            </Text>
+                        </View>
+                    }
+
+                    ListEmptyComponent={
+                        <Text>Nenhum pet cadastrado</Text>
+                    }
+
+                    renderItem={({ item }) => (
+
+                        <TouchableOpacity
+                            onPress={() => router.push(`/pets/${item.id}`)}
+                        >
+                            <View style={{margin: 10}}>
+                                <Text>🐾 {item.nome}</Text>
+                            </View>
+                        </TouchableOpacity>
+
+                    )}
+
+                    ListFooterComponent={
                         <Text>
-                            Pets cadastrados:
+                            ID: {clienteAtual.id}
                         </Text>
-                    </View>
-                }
+                    }
 
-                ListEmptyComponent={
-                    <Text>Nenhum pet cadastrado</Text>
-                }
+                    contentContainerStyle={{ paddingBottom: 50 }}
+                />
 
-                renderItem={({ item }) => (
                 <TouchableOpacity
-                    onPress={() => router.push(`/pets/${item.id}`)}
+                    style={styles.button}
+                    onPress={() => router.push(`/pets/novo?idCliente=${id}`)}
                 >
-                <View style={{margin: 10}}>
-                    <Text>🐾 {item.nome}</Text>
-                </View>
+                    <Text style={styles.buttonText}>Novo Pet</Text>
                 </TouchableOpacity>
-                )}
 
-                ListFooterComponent={
-                    <Text>
-                        ID: {clienteAtual.id}
-                    </Text>
-                }
-
-                contentContainerStyle={{ paddingBottom: 50 }}
-            />
-
-            <TouchableOpacity
-                style={styles.button}
-                onPress={() => router.push(`/pets/novo?idCliente=${id}`)}
-                >
-               <Text style={styles.buttonText}>Novo Pet</Text>
-            </TouchableOpacity>
+            </View>
 
         </View>
     )

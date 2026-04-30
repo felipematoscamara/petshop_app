@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { clientes } from '../data/clientes'
 import { gerarId } from '../data/clientes'
 import { router } from 'expo-router'
+import Header from '../components/Header'
 
 export default function NovoCliente(){
     const [nome, setNome] = useState('')
@@ -12,48 +13,55 @@ export default function NovoCliente(){
 
     return(
         
-        <View style={styles.container}>
+        <View style={{flex: 1}}>
+
+            <View>
+                <Header titulo='Novo Cliente'/>
+            </View>
+
+            <View style={styles.container}>
+
+                <TextInput
+                    placeholder='Nome'
+                    style={styles.input}
+                    value={nome}
+                    onChangeText={setNome}
+                    />
+
+                <TextInput
+                    placeholder='Telefone'
+                    style={styles.input}
+                    value={telefone}
+                    onChangeText={setTelefone}
+                    />
+
+                <TextInput
+                    placeholder='Endereço'
+                    style={styles.input}
+                    value={endereco}
+                    onChangeText={setEndereco}
+                    />
+
+                <TouchableOpacity 
+                    style={styles.button}
+                    onPress={() => {
+                        const novoCliente={
+                            id: gerarId(),
+                            nome: nome,
+                            telefone: telefone,
+                            endereco: endereco,
+                            pontos: 0
+                        }
+
+                        clientes.push(novoCliente)
+                        router.back()
+                    }}
+                    >
+                    <Text style={styles.buttonText}>Salvar</Text>
+                </TouchableOpacity>
+
+            </View>
         
-            <TextInput
-                placeholder='Nome'
-                style={styles.input}
-                value={nome}
-                onChangeText={setNome}
-                />
-
-            <TextInput
-                placeholder='Telefone'
-                style={styles.input}
-                value={telefone}
-                onChangeText={setTelefone}
-                />
-
-            <TextInput
-                placeholder='Endereço'
-                style={styles.input}
-                value={endereco}
-                onChangeText={setEndereco}
-                />
-
-            <TouchableOpacity 
-                style={styles.button}
-                onPress={() => {
-                    const novoCliente={
-                        id: gerarId(),
-                        nome: nome,
-                        telefone: telefone,
-                        endereco: endereco,
-                        pontos: 0
-                    }
-
-                    clientes.push(novoCliente)
-                    router.back()
-                }}
-                >
-                <Text style={styles.buttonText}>Salvar</Text>
-            </TouchableOpacity>
-
-
         </View>
     )
 }

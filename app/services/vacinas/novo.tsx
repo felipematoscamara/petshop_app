@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useLocalSearchParams, router } from 'expo-router'
 import { pets } from '@/app/data/pets'
 import { gerarVacinaId, vacinas } from '@/app/data/vacinas'
+import Header from '@/app/components/Header'
 
 export default function NovaVacina(){
   const {id} = useLocalSearchParams()
@@ -36,7 +37,13 @@ export default function NovaVacina(){
   }
 
   return(
-    <View style={styles.container}>
+    <View style={{flex: 1}}>
+
+      <View>
+        <Header titulo='Nova Vacina'/>
+      </View>
+
+      <View style={styles.container}>
 
         <TextInput
           placeholder='Vacina'
@@ -72,6 +79,8 @@ export default function NovaVacina(){
          >
           <Text style={styles.buttonText}>Salvar</Text>
         </TouchableOpacity>
+        
+      </View>
 
     </View>
   )

@@ -3,6 +3,7 @@ import { StyleSheet, View, TouchableOpacity, Text, FlatList } from 'react-native
 import { pets } from '../../data/pets'
 import { vacinas } from '@/app/data/vacinas'
 import { useState, useCallback } from 'react'
+import Header from '@/app/components/Header'
 
 export default function CartaoDeVacinas(){
   const {id} = useLocalSearchParams()
@@ -28,33 +29,40 @@ export default function CartaoDeVacinas(){
   }
   
   return(
-    <View style={styles.container}>    
+    <View style={{flex: 1}}>    
 
-      <FlatList
-        data={vacinasDoPet}
-        keyExtractor={(item) => item.id}
-        renderItem={({item}) => (
-          <View style={{margin: 10}}>
-            <Text>{item.vacina}</Text>
-            <Text>{item.dose}</Text>
-            <Text>{item.data}</Text>
-            <Text>{item.proxima}</Text>
-          </View>
-        )}
-        contentContainerStyle={{ paddingBottom: 50 }}
+      <View>
+        <Header titulo='Cartão de Vacinas'/>
+      </View>
 
-        ListEmptyComponent={
-          <Text>Nenhuma vacina cadastrada</Text>
-        }
-      />
+      <View style={styles.container}>
 
+        <FlatList
+          data={vacinasDoPet}
+          keyExtractor={(item) => item.id}
+          renderItem={({item}) => (
+            <View style={{margin: 10}}>
+              <Text>{item.vacina}</Text>
+              <Text>{item.dose}</Text>
+              <Text>{item.data}</Text>
+              <Text>{item.proxima}</Text>
+            </View>
+          )}
+          contentContainerStyle={{ paddingBottom: 50 }}
 
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() => router.push(`/services/vacinas/novo?id=${pet.id}`)}
-      >
-        <Text style={styles.buttonText}>Nova Vacina</Text>
-      </TouchableOpacity>
+          ListEmptyComponent={
+            <Text>Nenhuma vacina cadastrada</Text>
+          }
+        />
+
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => router.push(`/services/vacinas/novo?id=${pet.id}`)}
+        >
+          <Text style={styles.buttonText}>Nova Vacina</Text>
+        </TouchableOpacity>
+        
+      </View>
       
     </View>
   )

@@ -1,6 +1,7 @@
 import {StyleSheet, View, Text, TouchableOpacity} from 'react-native'
 import { useLocalSearchParams, router } from 'expo-router'
 import { pets } from '../data/pets'
+import Header from '../components/Header'
 
 export default function Details(){
     const {id} = useLocalSearchParams()
@@ -15,7 +16,14 @@ export default function Details(){
     }
     
     return(
-        <View style={styles.container}>
+        <View style={{flex: 1}}>
+
+          <View>
+            <Header titulo='Pet'/>
+          </View>
+
+          <View style={styles.container}>
+
             <Text>Nome: {pet.nome}</Text>
             <Text>Espécie: {pet.especie}</Text>
             <Text>Raça: {pet.raca}</Text>
@@ -34,6 +42,9 @@ export default function Details(){
             </TouchableOpacity>
 
             <Text>ID: {pet.id}</Text>
+
+          </View>
+          
         </View>
   )
 }
