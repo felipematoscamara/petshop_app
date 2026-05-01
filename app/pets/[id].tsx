@@ -1,14 +1,14 @@
-import {StyleSheet, View, Text, TouchableOpacity} from 'react-native'
+import {StyleSheet, View, Text, TouchableOpacity, Modal} from 'react-native'
 import { useLocalSearchParams, router } from 'expo-router'
 import { pets } from '../data/pets'
 import Header from '../components/Header'
-import { Alert } from 'react-native'
 import { useFocusEffect } from 'expo-router'
 import { useCallback, useState } from 'react'
 
 export default function Details(){
     const {id} = useLocalSearchParams()
 
+    const [menuVisible, setMenuVisible] = useState(false)
     const [petAtual, setPetAtual] = useState(pets.find(p => p.id === id));
 
     useFocusEffect(
@@ -28,56 +28,69 @@ export default function Details(){
         )
     }
 
-    function abrirMenu(){
-      Alert.alert(
-        petAtual.nome,
-        "Selecione uma ação:",
-        [
-
-          {
-            text: "Editar",
-            onPress: () => router.push(`/pets/editar/${id}`)
-          },
-
-          {
-            text: "Excluir",
-            style: "destructive",
-            onPress: excluirPet
-          },
-
-          {
-            text: "Cancelar",
-            style: "cancel"
-          }
-        ]
-      )
-    }
-
-    function excluirPet(){
-      Alert.alert(
-        "Comfirmar",
-        "Tem Certeza que deseja excluir este pet?",
-        [
-          {text: "Não", style: "cancel"},
-          {
-            text: "Sim",
-            style: "destructive",
-            onPress: ()=> {
-              const index = pets.findIndex(p => p.id === id)
-
-              if(index !== -1){
-                pets.splice(index, 1)
-              }
-
-              router.back()
-            }
-          }
-        ]
-      )
+    function abrirMenu() {
+      setMenuVisible(true)
     }
     
-    return(
-        <View style={{flex: 1}}>
+    function excluirPet() {
+      const index = pets.findIndex(p => p.id === id);
+    
+        if (index !== -1) {
+          pets.splice(index, 1);
+        }
+    
+      router.back();
+    }
+    
+  return(
+    <View style={{flex: 1}}>
+
+      <Modal
+        visible={menuVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setMenuVisible(false)}
+        >
+          <View style={stylesModal.overlay}>
+          
+            <View style={stylesModal.menu}>
+          
+              <Text style={stylesModal.title}>
+                {petAtual.nome}
+              </Text>
+          
+              <TouchableOpacity
+                style={stylesModal.button}
+                onPress={() => {
+                  setMenuVisible(false);
+                    router.push(`/pets/editar/${id}`);
+                }}
+              >
+              <Text>Editar Pet</Text>
+              </TouchableOpacity>
+          
+              <TouchableOpacity
+                style={stylesModal.buttonDanger}
+                  onPress={() => {
+                    setMenuVisible(false);
+                    excluirPet();
+                }}
+              >
+              <Text style={{ color: "red" }}>Excluir Pet</Text>
+              </TouchableOpacity>
+          
+              <TouchableOpacity
+                style={stylesModal.button}
+                onPress={() => setMenuVisible(false)}
+              >
+                <Text>Cancelar</Text>
+              </TouchableOpacity>
+          
+            </View>
+          
+          </View>
+          
+        </Modal>
 
           <View>
             <Header 
@@ -109,7 +122,7 @@ export default function Details(){
 
           </View>
           
-        </View>
+      </View>
   )
 }
 
@@ -119,4 +132,30 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFF",
     padding: 20
   }
+})
+
+const stylesModal = StyleSheet.create({
+    overlay: {
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.5)",
+        justifyContent: "center",
+        alignItems: "center"
+    },
+    menu: {
+        width: 260,
+        backgroundColor: "#fff",
+        borderRadius: 12,
+        padding: 16
+    },
+    title: {
+        fontSize: 16,
+        fontWeight: "bold",
+        marginBottom: 10
+    },
+    button: {
+        padding: 12
+    },
+    buttonDanger: {
+        padding: 12
+    }
 })

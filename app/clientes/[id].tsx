@@ -1,16 +1,17 @@
 import { useLocalSearchParams, useFocusEffect } from "expo-router"
-import {StyleSheet, Text, View, TouchableOpacity, FlatList} from 'react-native'
+import {StyleSheet, Text, View, TouchableOpacity, FlatList, Modal} from 'react-native'
 import { clientes } from "../data/clientes"
 import { router } from "expo-router"
 import { pets } from "../data/pets"
 import { useCallback, useState } from "react"
 import { servicos } from "../data/servicos"
 import Header from "../components/Header"
-import { Alert } from "react-native"
 
 export default function Cliente(){
     const {id} = useLocalSearchParams()
 
+    const [menuVisible, setMenuVisible] = useState(false)
+    
     const [clienteAtual, setClienteAtual] = useState(
         clientes.find(c => c.id === id)
     )
@@ -50,55 +51,71 @@ export default function Cliente(){
         )
     }
 
-    function abrirMenu(){
-        Alert.alert(
-            clienteAtual.nome,
-            "Selecione uma ação:",
-            [
-                {
-                    text: "Editar",
-                    onPress: () => router.push(`/clientes/editar/${id}`)
-                },
 
-                {
-                    text: "Excluir",
-                    style: "destructive",
-                    onPress: excluirCliente
-                },
-
-                {
-                    text: "Cancelar",
-                    style: "cancel"
-                }
-            ]
-        )
+    function abrirMenu() {
+        setMenuVisible(true)
     }
 
-    function excluirCliente(){
-        Alert.alert(
-            "Comfirmar",
-            "Tem certeza que deseja excluir este cliente?",
-            [
-                {text: "Não", style: "cancel"},
-                {
-                    text: "Sim",
-                    style: "destructive",
-                    onPress: () => {
-                        const index = clientes.findIndex(c => c.id === id)
 
-                        if(index !== -1){
-                            clientes.splice(index, 1)
-                        }
+    function excluirCliente() {
+        const index = clientes.findIndex(c => c.id === id);
 
-                        router.back()
-                    }
-                }
-            ]
-        )
+        if (index !== -1) {
+            clientes.splice(index, 1);
+        }
+
+        router.back();
     }
 
     return(
         <View style={{flex: 1}}>
+
+            <Modal
+                visible={menuVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setMenuVisible(false)}
+            >
+                <View style={stylesModal.overlay}>
+
+                    <View style={stylesModal.menu}>
+
+                        <Text style={stylesModal.title}>
+                            {clienteAtual.nome}
+                        </Text>
+
+                        <TouchableOpacity
+                            style={stylesModal.button}
+                            onPress={() => {
+                                setMenuVisible(false);
+                                router.push(`/clientes/editar/${id}`);
+                            }}
+                        >
+                            <Text>Editar Cliente</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={stylesModal.buttonDanger}
+                            onPress={() => {
+                                setMenuVisible(false);
+                                excluirCliente();
+                            }}
+                        >
+                            <Text style={{ color: "red" }}>Excluir Cliente</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={stylesModal.button}
+                            onPress={() => setMenuVisible(false)}
+                        >
+                            <Text>Cancelar</Text>
+                        </TouchableOpacity>
+
+                    </View>
+
+                </View>
+
+            </Modal>
 
             <View>
                 <Header 
@@ -178,5 +195,31 @@ const styles = StyleSheet.create({
 
     buttonText:{
         color: "#FFF"
+    }
+})
+
+const stylesModal = StyleSheet.create({
+    overlay: {
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.5)",
+        justifyContent: "center",
+        alignItems: "center"
+    },
+    menu: {
+        width: 260,
+        backgroundColor: "#fff",
+        borderRadius: 12,
+        padding: 16
+    },
+    title: {
+        fontSize: 16,
+        fontWeight: "bold",
+        marginBottom: 10
+    },
+    button: {
+        padding: 12
+    },
+    buttonDanger: {
+        padding: 12
     }
 })
