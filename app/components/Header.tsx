@@ -1,6 +1,7 @@
 import { View, Text, TouchableOpacity, StyleSheet} from "react-native";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons"
 
 type Props = {
     titulo: string
@@ -16,7 +17,7 @@ export default function Header({titulo}: Props){
                 <TouchableOpacity
                     onPress={() => router.back()}
                 >
-                    <Text style={styles.arrow}>🠔</Text>
+                    <Ionicons name="arrow-back" size={26} color="#FFF" />
                 </TouchableOpacity>
 
                 <Text style={styles.titulo}>
@@ -56,10 +57,6 @@ const styles = StyleSheet.create({
     icon:{
         color: "#FFF",
         fontSize: 22
-    },
-
-    arrow:{
-        color: "#FFF",
-        fontSize: 30
     }
+    
 })

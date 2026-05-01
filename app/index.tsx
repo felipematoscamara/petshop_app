@@ -31,7 +31,7 @@ export default function ClientesPage(){
               onChangeText={setBusca}
               
               style={{
-                flex: 1,
+                width: "100%",
                 borderWidth: 1,
                 marginBottom: 10,
                 padding: 8,

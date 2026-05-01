@@ -65,11 +65,9 @@ export default function Cliente(){
                     ListHeaderComponent={
                         <View>
                             <Text>{clienteAtual.nome} ⭐{totalPontos}</Text>
-                            <Text>{clienteAtual.telefone}</Text>                                <Text>{clienteAtual.endereco}</Text>
-
-                            <Text>
-                                Pets cadastrados:
-                            </Text>
+                            <Text>{clienteAtual.telefone}</Text>                                
+                            <Text>{clienteAtual.endereco}</Text>
+                            <Text>Pets cadastrados:</Text>
                         </View>
                     }
 
@@ -90,9 +88,7 @@ export default function Cliente(){
                     )}
 
                     ListFooterComponent={
-                        <Text>
-                            ID: {clienteAtual.id}
-                        </Text>
+                        <Text>ID: {clienteAtual.id}</Text>
                     }
 
                     contentContainerStyle={{ paddingBottom: 50 }}
