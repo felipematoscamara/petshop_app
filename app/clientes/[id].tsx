@@ -6,6 +6,7 @@ import { pets } from "../data/pets"
 import { useCallback, useState } from "react"
 import { servicos } from "../data/servicos"
 import Header from "../components/Header"
+import { Alert } from "react-native"
 
 export default function Cliente(){
     const {id} = useLocalSearchParams()
@@ -49,11 +50,61 @@ export default function Cliente(){
         )
     }
 
+    function abrirMenu(){
+        Alert.alert(
+            clienteAtual.nome,
+            "Selecione uma ação:",
+            [
+                {
+                    text: "Editar",
+                    onPress: () => router.push(`/clientes/editar/${id}`)
+                },
+
+                {
+                    text: "Excluir",
+                    style: "destructive",
+                    onPress: excluirCliente
+                },
+
+                {
+                    text: "Cancelar",
+                    style: "cancel"
+                }
+            ]
+        )
+    }
+
+    function excluirCliente(){
+        Alert.alert(
+            "Comfirmar",
+            "Tem certeza que deseja excluir este cliente?",
+            [
+                {text: "Não", style: "cancel"},
+                {
+                    text: "Sim",
+                    style: "destructive",
+                    onPress: () => {
+                        const index = clientes.findIndex(c => c.id === id)
+
+                        if(index !== -1){
+                            clientes.splice(index, 1)
+                        }
+
+                        router.back()
+                    }
+                }
+            ]
+        )
+    }
+
     return(
         <View style={{flex: 1}}>
 
             <View>
-                <Header titulo="Cliente"/>
+                <Header 
+                titulo="Cliente"
+                onMenuPress={abrirMenu}
+                />
             </View>
 
             <View style={styles.container}>

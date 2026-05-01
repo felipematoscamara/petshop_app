@@ -1,26 +1,28 @@
-import { router, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams} from "expo-router"
 import { View, Text, TextInput, TouchableOpacity, StyleSheet} from "react-native"
-import { clientes } from "@/app/data/clientes"
+import { pets } from "@/app/data/pets"
 import { useState } from "react"
 import Header from "@/app/components/Header"
 
-export default function EditarCliente(){
-    
-    const params = useLocalSearchParams()
-    const id = String(params.id)
+export default function EditarPet(){
 
-    const cliente = clientes.find(c => c.id === id)
+    const {id} = useLocalSearchParams()
+    const pet = pets.find(p => p.id === id)
 
-    const [nome, setNome] = useState(cliente?.nome || "")
-    const [telefone, setTelefone] = useState(cliente?.telefone || "")
-    const [endereco, setEndereco] = useState(cliente?.endereco || "")
+    const [nome, setNome] = useState(pet?.nome || "")
+    const [especie, setEspecie] = useState(pet?.especie || "")
+    const [raca, setRaca] = useState(pet?.raca || "")
+    const [sexo, setSexo] = useState(pet?.sexo || "")
+    const [nascimento, setNascimento] = useState(pet?.nascimento || "")
 
     function salvar(){
-        if(!cliente) return
+        if(!pet) return
 
-        cliente.nome = nome
-        cliente.telefone = telefone
-        cliente.endereco = endereco
+        pet.nome = nome
+        pet.especie = especie
+        pet.raca = raca
+        pet.sexo = sexo
+        pet.nascimento = nascimento
 
         router.back()
     }
@@ -29,31 +31,37 @@ export default function EditarCliente(){
         <View style={{flex: 1}}>
 
             <View>
-                <Header titulo="Editar Cliente"/>
+                <Header titulo="Editar Pet"/>
             </View>
 
             <View style={styles.container}>
 
                 <Text>Nome</Text>
-                <TextInput
+                <TextInput 
                     style={styles.input}
                     value={nome}
                     onChangeText={setNome}
                 />
 
-                <Text>Telefone</Text>
-                <TextInput
-                    style={styles.input}
-                    value={telefone}
-                    onChangeText={setTelefone}
-                    keyboardType="phone-pad"
-                />
-
-                <Text>Endereço</Text>
+                <Text>Espécie</Text>
                 <TextInput 
                     style={styles.input}
-                    value={endereco}
-                    onChangeText={setEndereco}
+                    value={especie}
+                    onChangeText={setEspecie}
+                />
+
+                <Text>Raça</Text>
+                <TextInput 
+                    style={styles.input}
+                    value={raca}
+                    onChangeText={setRaca}
+                />
+
+                <Text>Nascimento</Text>
+                <TextInput 
+                    style={styles.input}
+                    value={nascimento}
+                    onChangeText={setNascimento}
                 />
 
                 <TouchableOpacity
@@ -64,6 +72,7 @@ export default function EditarCliente(){
                 </TouchableOpacity>
 
             </View>
+
         </View>
     )
 }
@@ -93,4 +102,5 @@ const styles = StyleSheet.create({
     buttonText:{
         color: "#FFF"
     }
+
 })

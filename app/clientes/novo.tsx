@@ -33,6 +33,7 @@ export default function NovoCliente(){
                     style={styles.input}
                     value={telefone}
                     onChangeText={setTelefone}
+                    keyboardType="phone-pad"
                     />
 
                 <TextInput

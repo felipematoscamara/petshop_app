@@ -5,9 +5,10 @@ import { Ionicons } from "@expo/vector-icons"
 
 type Props = {
     titulo: string
+    onMenuPress?: () => void
 }
 
-export default function Header({titulo}: Props){
+export default function Header({titulo, onMenuPress}: Props){
     return(
 
         <SafeAreaView style={styles.safe}>
@@ -24,9 +25,11 @@ export default function Header({titulo}: Props){
                     {titulo}
                 </Text>
 
-                <TouchableOpacity>
-                    <Text style={styles.icon}>☰</Text>
-                </TouchableOpacity>
+                {onMenuPress && (
+                    <TouchableOpacity onPress={onMenuPress}>
+                        <Text style={styles.icon}>☰</Text>
+                    </TouchableOpacity>
+                )}
 
             </View>
 
