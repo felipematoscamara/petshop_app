@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from 'expo-router'
-import {StyleSheet, TouchableOpacity, View, Text, TextInput, Alert} from 'react-native'
+import {StyleSheet, TouchableOpacity, View, Text, TextInput, Modal} from 'react-native'
 import { pets } from '@/app/data/pets'
 import { useState } from 'react'
 import { gerarServicoId, servicos } from '@/app/data/servicos'
@@ -9,6 +9,10 @@ import Header from '@/app/components/Header'
 
 export default function NovoServico(){
   const {id} = useLocalSearchParams()
+
+  const [menuVisible, setMenuVisible] = useState(false)
+  const [mensagem, setMensagem] = useState('')
+
   const [banho, setBanho] = useState(false)
   const [tosa, setTosa] = useState(false)
   const [data, setData] = useState('')
@@ -21,7 +25,8 @@ export default function NovoServico(){
     if (!cliente) return
 
     if(!banho && !tosa){
-      Alert.alert('Erro','Selecione pelo menos um serviço')
+      setMensagem('Selecione pelo menos um serviço')
+      setMenuVisible(true)
       return
     }
 
@@ -33,7 +38,7 @@ export default function NovoServico(){
       servicos.push({
         id: gerarServicoId(),
         servico: 'Banho',
-        data: dataAtual,
+        data: dataAtual, 
         pontos,
         idPet: pet.id,
         idCliente: cliente.id
@@ -98,6 +103,33 @@ export default function NovoServico(){
         
       </View>
 
+      <Modal
+        visible={menuVisible}
+        transparent
+        animationType='fade'
+        onRequestClose={() => setMenuVisible(false)}
+      >
+        <View style={stylesModal.overlay}>
+
+          <View style={stylesModal.menu}>
+
+            <Text style={stylesModal.title}>
+              {mensagem}
+            </Text>
+
+            <TouchableOpacity
+              style={stylesModal.button}
+              onPress={() => setMenuVisible(false)}
+            >
+              <Text>Ok</Text>
+            </TouchableOpacity>
+
+          </View>
+
+        </View>
+
+      </Modal>
+
     </View>
   )
 }
@@ -120,4 +152,30 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "#FFF"
   }
+})
+
+const stylesModal = StyleSheet.create({
+    overlay: {
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.5)",
+        justifyContent: "center",
+        alignItems: "center"
+    },
+    menu: {
+        width: 260,
+        backgroundColor: "#fff",
+        borderRadius: 12,
+        padding: 16
+    },
+    title: {
+        fontSize: 16,
+        fontWeight: "bold",
+        marginBottom: 10
+    },
+    button: {
+        padding: 12
+    },
+    buttonDanger: {
+        padding: 12
+    }
 })

@@ -1,4 +1,4 @@
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, Alert } from 'react-native'
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, Modal } from 'react-native'
 import { useState } from 'react'
 import { useLocalSearchParams, router } from 'expo-router'
 import { pets } from '@/app/data/pets'
@@ -9,6 +9,9 @@ export default function NovaVacina(){
   const {id} = useLocalSearchParams()
   const pet = pets.find(p => p.id === id)
 
+  const [menuVisible, setMenuVisible] = useState(false)
+  const [mensagem, setMensagem] = useState('')
+
   const [vacina, setVacina] = useState('')
   const [dose, setDose] = useState('')
   const [data, setData] = useState('')
@@ -16,7 +19,8 @@ export default function NovaVacina(){
   
   function salvarVacina(){
     if(!vacina || !dose || !data) {
-      Alert.alert('Erro','Preencha os campos obrigatórios')
+      setMensagem('Preencha os campos obrigátorios')
+      setMenuVisible(true)
       return
   }
     
@@ -28,6 +32,7 @@ export default function NovaVacina(){
       proxima,
       idPet: id
     }
+
     vacinas.push(novaVacina)
     router.back()
   }
@@ -82,6 +87,32 @@ export default function NovaVacina(){
         
       </View>
 
+      <Modal
+        visible={menuVisible}
+        transparent
+        animationType='fade'
+        onRequestClose={() => setMenuVisible(false)}
+      >
+        <View style={stylesModal.overlay}>
+          
+          <View style={stylesModal.menu}>
+
+            <Text style={stylesModal.title}>
+              {mensagem}
+            </Text>
+
+            <TouchableOpacity
+              style={stylesModal.button}
+              onPress={() => setMenuVisible(false)}
+            >
+              <Text>Ok</Text>
+            </TouchableOpacity>
+
+          </View>
+
+        </View>
+      </Modal>
+
     </View>
   )
 }
@@ -111,4 +142,30 @@ const styles = StyleSheet.create({
   buttonText:{
     color: '#FFF'
   }
+})
+
+const stylesModal = StyleSheet.create({
+    overlay: {
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.5)",
+        justifyContent: "center",
+        alignItems: "center"
+    },
+    menu: {
+        width: 260,
+        backgroundColor: "#fff",
+        borderRadius: 12,
+        padding: 16
+    },
+    title: {
+        fontSize: 16,
+        fontWeight: "bold",
+        marginBottom: 10
+    },
+    button: {
+        padding: 12
+    },
+    buttonDanger: {
+        padding: 12
+    }
 })
