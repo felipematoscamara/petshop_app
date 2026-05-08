@@ -104,7 +104,10 @@ export default function Details(){
             <Text>Nome: {petAtual.nome}</Text>
             <Text>Espécie: {petAtual.especie}</Text>
             <Text>Raça: {petAtual.raca}</Text>
-            <Text>Nascimento: {petAtual.nascimento}</Text>
+            <Text>{petAtual.nascimento
+              ? 'Nascimento: ' + new Date(petAtual.nascimento).toLocaleDateString('pt-BR')
+              : 'Nascimento: Não informado'}
+            </Text>
 
             <TouchableOpacity
               onPress={() => router.push(`/services/vacinas?id=${petAtual.id}`)}

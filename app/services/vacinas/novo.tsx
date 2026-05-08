@@ -4,6 +4,7 @@ import { useLocalSearchParams, router } from 'expo-router'
 import { pets } from '@/app/data/pets'
 import { gerarVacinaId, vacinas } from '@/app/data/vacinas'
 import Header from '@/app/components/Header'
+import DateInput from '@/app/components/DateInput'
 
 export default function NovaVacina(){
   const {id} = useLocalSearchParams()
@@ -14,10 +15,11 @@ export default function NovaVacina(){
 
   const [vacina, setVacina] = useState('')
   const [dose, setDose] = useState('')
-  const [data, setData] = useState('')
-  const [proxima, setProxima] = useState('')
+  const [data, setData] = useState<Date | null>(null)
+  const [proxima, setProxima] = useState<Date | null>(null)
   
   function salvarVacina(){
+
     if(!vacina || !dose || !data) {
       setMensagem('Preencha os campos obrigátorios')
       setMenuVisible(true)
@@ -28,8 +30,8 @@ export default function NovaVacina(){
       id: gerarVacinaId(),
       vacina,
       dose,
-      data,
-      proxima,
+      data: data.toISOString(),
+      proxima: proxima?.toISOString(),
       idPet: id
     }
 
@@ -64,18 +66,16 @@ export default function NovaVacina(){
           style={styles.input}
         />
 
-        <TextInput
+        <DateInput
           placeholder='Data'
           value={data}
-          onChangeText={setData}
-          style={styles.input}
+          onChange={setData}
         />
       
-        <TextInput
+        <DateInput
           placeholder='Próxima'
           value={proxima}
-          onChangeText={setProxima}
-          style={styles.input}
+          onChange={setProxima}
         />
     
         <TouchableOpacity
@@ -111,6 +111,7 @@ export default function NovaVacina(){
           </View>
 
         </View>
+        
       </Modal>
 
     </View>

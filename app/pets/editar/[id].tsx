@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet} from "react-native
 import { pets } from "@/app/data/pets"
 import { useState } from "react"
 import Header from "@/app/components/Header"
+import DateInput from "@/app/components/DateInput"
 
 export default function EditarPet(){
 
@@ -13,7 +14,11 @@ export default function EditarPet(){
     const [especie, setEspecie] = useState(pet?.especie || "")
     const [raca, setRaca] = useState(pet?.raca || "")
     const [sexo, setSexo] = useState(pet?.sexo || "")
-    const [nascimento, setNascimento] = useState(pet?.nascimento || "")
+    const [nascimento, setNascimento] = useState<Date | null>(
+        pet?.nascimento 
+            ? new Date(pet.nascimento)
+            : null
+    )
 
     function salvar(){
         if(!pet) return
@@ -22,7 +27,7 @@ export default function EditarPet(){
         pet.especie = especie
         pet.raca = raca
         pet.sexo = sexo
-        pet.nascimento = nascimento
+        pet.nascimento = nascimento?.toISOString()
 
         router.back()
     }
@@ -58,10 +63,10 @@ export default function EditarPet(){
                 />
 
                 <Text>Nascimento</Text>
-                <TextInput 
+                <DateInput 
                     style={styles.input}
                     value={nascimento}
-                    onChangeText={setNascimento}
+                    onChange={setNascimento}
                 />
 
                 <TouchableOpacity

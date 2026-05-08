@@ -6,6 +6,7 @@ import { gerarServicoId, servicos } from '@/app/data/servicos'
 import { clientes } from '@/app/data/clientes'
 import { router } from 'expo-router'
 import Header from '@/app/components/Header'
+import DateInput from '@/app/components/DateInput'
 
 export default function NovoServico(){
   const {id} = useLocalSearchParams()
@@ -15,14 +16,21 @@ export default function NovoServico(){
 
   const [banho, setBanho] = useState(false)
   const [tosa, setTosa] = useState(false)
-  const [data, setData] = useState('')
+  const [data, setData] = useState<Date | null>(null)
 
   function registrarServico() {
     const pet = pets.find(p => p.id === id)
     if (!pet) return
 
     const cliente = clientes.find(c => c.id === pet.idCliente)
+    
     if (!cliente) return
+    
+    if (!data) {
+      setMensagem('Selecione uma data')
+      setMenuVisible(true)
+      return
+    }
 
     if(!banho && !tosa){
       setMensagem('Selecione pelo menos um serviço')
@@ -30,7 +38,6 @@ export default function NovoServico(){
       return
     }
 
-    const dataAtual = data || new Date().toISOString()
 
     if(banho) {
       const pontos = 10
@@ -38,7 +45,7 @@ export default function NovoServico(){
       servicos.push({
         id: gerarServicoId(),
         servico: 'Banho',
-        data: dataAtual, 
+        data: data.toISOString(), 
         pontos,
         idPet: pet.id,
         idCliente: cliente.id
@@ -53,7 +60,7 @@ export default function NovoServico(){
       servicos.push({
         id: gerarServicoId(),
         servico: 'Tosa',
-        data: dataAtual,
+        data: data.toISOString(),
         pontos,
         idPet: pet.id,
         idCliente: cliente.id
@@ -74,16 +81,10 @@ export default function NovoServico(){
 
       <View style={styles.container}>
 
-        <TextInput
+        <DateInput
           placeholder='Data'
           value={data}
-          onChangeText={setData}
-          style={{
-            borderWidth: 1,
-            padding: 8,
-            borderColor: '#CCC',
-            marginBottom: 10
-          }}
+          onChange={setData}
         />
         
         <TouchableOpacity onPress={() => setBanho(!banho)}>

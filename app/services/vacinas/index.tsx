@@ -78,8 +78,8 @@ export default function CartaoDeVacinas(){
             >
               <Text>{item.vacina}</Text>
               <Text>{item.dose}</Text>
-              <Text>{item.data}</Text>
-              <Text>{item.proxima}</Text>
+              <Text>{new Date(item.data).toLocaleDateString('pt-BR')}</Text>
+              <Text>{new Date(item.proxima).toLocaleDateString('pt-BR')}</Text>
             </TouchableOpacity>
           )}
           contentContainerStyle={{ paddingBottom: 50 }}

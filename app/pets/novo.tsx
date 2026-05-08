@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useLocalSearchParams, router } from 'expo-router'
 import { pets, gerarPetId } from '../data/pets'
 import Header from '../components/Header'
+import DateInput from '../components/DateInput'
 
 export default function NovoPet(){
   const {idCliente} = useLocalSearchParams()
@@ -10,7 +11,7 @@ export default function NovoPet(){
   const [especie, setEspecie] = useState('')
   const [raca, setRaca] = useState('')
   const [sexo, setSexo] = useState('')
-  const [nascimento, setNascimento] = useState('')
+  const [nascimento, setNascimento] = useState<Date | null>(null)
 
   function salvarPet(){
 
@@ -25,7 +26,7 @@ export default function NovoPet(){
       especie,
       raca,
       sexo,
-      nascimento,
+      nascimento: nascimento?.toISOString(),
       idCliente: idCliente
     }
     pets.push(novoPet)
@@ -64,11 +65,10 @@ export default function NovoPet(){
           onChangeText={setRaca}
         />
 
-        <TextInput
-          placeholder='Nascimento'
-          style={styles.input}
+        <DateInput
+          placeholder="Nascimento"
           value={nascimento}
-          onChangeText={setNascimento}
+          onChange={setNascimento}
         />
 
         <TouchableOpacity 

@@ -4,7 +4,6 @@ import { pets } from '@/app/data/pets'
 import { useCallback, useState } from 'react'
 import { servicos } from '@/app/data/servicos'
 import Header from '@/app/components/Header'
-import { vacinas } from '@/app/data/vacinas'
 
 export default function banhoTosa(){
   const {id} = useLocalSearchParams()
@@ -23,19 +22,18 @@ export default function banhoTosa(){
   }
 
   const excluirServico = () => {
-    if (!servicoSelecionado) return
+  if (!servicoSelecionado) return
 
-    const novaLista = listaServicos.filter(
-      s => s.id !== servicoSelecionado.id
-    )
+  const novaLista = listaServicos.filter(
+    s => s.id !== servicoSelecionado.id
+  )
 
-    servicos.length = 0
-    servicos.push(...novaLista)
+  servicos.length = 0
+  servicos.push(...novaLista)
 
-    setListaServicos(novaLista)
-    setMenuVisible(false)
-    setServicoSelecionado(null)
-  }
+  setListaServicos(novaLista)
+  setServicoSelecionado(null)
+}
 
   useFocusEffect(
     useCallback(() => {
@@ -76,7 +74,7 @@ export default function banhoTosa(){
               }}
             >
               <Text>{item.servico}</Text>
-              <Text>{new Date(item.data).toLocaleString('pt-BR')}</Text>
+              <Text>{new Date(item.data).toLocaleDateString('pt-BR')}</Text>
               <Text>Pontos: {item.pontos}</Text>
             </TouchableOpacity>
           )}
