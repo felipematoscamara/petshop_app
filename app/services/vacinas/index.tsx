@@ -4,6 +4,7 @@ import { pets } from '../../data/pets'
 import { vacinas } from '@/app/data/vacinas'
 import { useState, useCallback } from 'react'
 import Header from '@/app/components/Header'
+import MessageModal from '@/app/components/MessageModal'
 
 export default function CartaoDeVacinas(){
   const {id} = useLocalSearchParams()
@@ -51,7 +52,13 @@ export default function CartaoDeVacinas(){
   if(!pet){
     return(
       <View style={styles.container}>
-        <Text>Pet não encontrado</Text>
+
+        <MessageModal
+          visible={true}
+          mensagem='Ops! Não conseguimos localizar os dados deste pet. Você será redirecionado para página home ;).'
+          onClose={() => router.replace("/")}
+        />
+
       </View>
     )
   }
@@ -111,7 +118,7 @@ export default function CartaoDeVacinas(){
 
             <Text style={stylesModal.title}>
               {vacinaSelecionada
-                ? `${vacinaSelecionada.vacina} - ${vacinaSelecionada.data}`
+                ? `${vacinaSelecionada.vacina} - ${new Date (vacinaSelecionada.data).toLocaleDateString('pt-BR')}`
                 : ''
               }
             </Text>
@@ -131,7 +138,7 @@ export default function CartaoDeVacinas(){
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={stylesModal.button}
+              style={stylesModal.buttonDanger}
               onPress={() => {
                 setMenuVisible(false)
                 excluirVacina()

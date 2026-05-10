@@ -4,12 +4,13 @@ import { clientes } from '../data/clientes'
 import { gerarId } from '../data/clientes'
 import { router } from 'expo-router'
 import Header from '../components/Header'
+import MessageModal from '../components/MessageModal'
 
 export default function NovoCliente(){
     const [nome, setNome] = useState('')
     const [telefone, setTelefone] = useState('')
     const [endereco, setEndereco] = useState('')
-    const [pontos] = useState('')
+    const [modalVisible, setModalvisible] = useState(false)
 
     return(
         
@@ -22,7 +23,7 @@ export default function NovoCliente(){
             <View style={styles.container}>
 
                 <TextInput
-                    placeholder='Nome'
+                    placeholder='Nome*'
                     style={styles.input}
                     value={nome}
                     onChangeText={setNome}
@@ -46,11 +47,17 @@ export default function NovoCliente(){
                 <TouchableOpacity 
                     style={styles.button}
                     onPress={() => {
+
+                        if(!nome){
+                            setModalvisible(true)
+                            return
+                        }
+
                         const novoCliente={
                             id: gerarId(),
-                            nome: nome,
-                            telefone: telefone,
-                            endereco: endereco,
+                            nome,
+                            telefone,
+                            endereco,
                             pontos: 0
                         }
 
@@ -62,7 +69,13 @@ export default function NovoCliente(){
                 </TouchableOpacity>
 
             </View>
-        
+
+            <MessageModal
+                visible={modalVisible}
+                mensagem='Preencha os campos obrigátorios (*)'
+                onClose={() => setModalvisible(false)}
+            />
+            
         </View>
     )
 }

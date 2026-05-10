@@ -1,28 +1,29 @@
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, Modal } from 'react-native'
+import { StyleSheet, View, Text, TextInput, TouchableOpacity} from 'react-native'
 import { useState } from 'react'
 import { useLocalSearchParams, router } from 'expo-router'
 import { pets } from '@/app/data/pets'
 import { gerarVacinaId, vacinas } from '@/app/data/vacinas'
 import Header from '@/app/components/Header'
 import DateInput from '@/app/components/DateInput'
+import MessageModal from '@/app/components/MessageModal'
 
 export default function NovaVacina(){
   const {id} = useLocalSearchParams()
   const pet = pets.find(p => p.id === id)
-
-  const [menuVisible, setMenuVisible] = useState(false)
-  const [mensagem, setMensagem] = useState('')
 
   const [vacina, setVacina] = useState('')
   const [dose, setDose] = useState('')
   const [data, setData] = useState<Date | null>(null)
   const [proxima, setProxima] = useState<Date | null>(null)
   
+  const [messageVisible, setMessageVisible] = useState(false)
+  const [mensagem, setMensagem] = useState('')
+
   function salvarVacina(){
 
     if(!vacina || !dose || !data) {
-      setMensagem('Preencha os campos obrigátorios')
-      setMenuVisible(true)
+      setMensagem('Preencha os campos obrigátorios (*)')
+      setMessageVisible(true)
       return
   }
     
@@ -40,7 +41,17 @@ export default function NovaVacina(){
   }
 
   if(!pet){
-    return <View style={styles.container}>Pet não encontrado</View>
+    return(
+      <View style={styles.container}>
+
+        <MessageModal
+          visible={true}
+          mensagem='Ops! Não conseguimos localizar os dados deste pet. Você será redirecionado para página home ;).'
+          onClose={() => router.replace("/")}
+        />
+
+      </View>
+    )
   }
 
   return(
@@ -53,21 +64,21 @@ export default function NovaVacina(){
       <View style={styles.container}>
 
         <TextInput
-          placeholder='Vacina'
+          placeholder='Vacina*'
           value={vacina}
           onChangeText={setVacina}
           style={styles.input}
         />
      
         <TextInput
-          placeholder='Dose'
+          placeholder='Dose*'
           value={dose}
           onChangeText={setDose}
           style={styles.input}
         />
 
         <DateInput
-          placeholder='Data'
+          placeholder='Data*'
           value={data}
           onChange={setData}
         />
@@ -87,32 +98,11 @@ export default function NovaVacina(){
         
       </View>
 
-      <Modal
-        visible={menuVisible}
-        transparent
-        animationType='fade'
-        onRequestClose={() => setMenuVisible(false)}
-      >
-        <View style={stylesModal.overlay}>
-          
-          <View style={stylesModal.menu}>
-
-            <Text style={stylesModal.title}>
-              {mensagem}
-            </Text>
-
-            <TouchableOpacity
-              style={stylesModal.button}
-              onPress={() => setMenuVisible(false)}
-            >
-              <Text>Ok</Text>
-            </TouchableOpacity>
-
-          </View>
-
-        </View>
-        
-      </Modal>
+      <MessageModal
+        visible={messageVisible}
+        mensagem={mensagem}
+        onClose={() => setMessageVisible(false)}
+      />
 
     </View>
   )
@@ -143,30 +133,4 @@ const styles = StyleSheet.create({
   buttonText:{
     color: '#FFF'
   }
-})
-
-const stylesModal = StyleSheet.create({
-    overlay: {
-        flex: 1,
-        backgroundColor: "rgba(0,0,0,0.5)",
-        justifyContent: "center",
-        alignItems: "center"
-    },
-    menu: {
-        width: 260,
-        backgroundColor: "#fff",
-        borderRadius: 12,
-        padding: 16
-    },
-    title: {
-        fontSize: 16,
-        fontWeight: "bold",
-        marginBottom: 10
-    },
-    button: {
-        padding: 12
-    },
-    buttonDanger: {
-        padding: 12
-    }
 })

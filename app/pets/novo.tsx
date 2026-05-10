@@ -4,6 +4,7 @@ import { useLocalSearchParams, router } from 'expo-router'
 import { pets, gerarPetId } from '../data/pets'
 import Header from '../components/Header'
 import DateInput from '../components/DateInput'
+import MessageModal from '../components/MessageModal'
 
 export default function NovoPet(){
   const {idCliente} = useLocalSearchParams()
@@ -13,10 +14,14 @@ export default function NovoPet(){
   const [sexo, setSexo] = useState('')
   const [nascimento, setNascimento] = useState<Date | null>(null)
 
+  const [modalVisible, setModalVisible] = useState(false)
+  const [mensagemModal, setMensagemModal] = useState('')
+
   function salvarPet(){
 
-    if(!idCliente){
-      alert("Cliente não encontrado")
+    if(!idCliente || !nome || !especie){
+      setMensagemModal('Preencha os campos obrigátorios (*)')
+      setModalVisible(true)
       return
     }
 
@@ -45,14 +50,14 @@ export default function NovoPet(){
       <View style={styles.container}>
 
         <TextInput
-          placeholder='Nome'
+          placeholder='Nome*'
           style={styles.input}
           value={nome}
           onChangeText={setNome}
         />
 
         <TextInput
-          placeholder='Especie'
+          placeholder='Especie*'
           style={styles.input}
           value={especie}
           onChangeText={setEspecie}
@@ -80,6 +85,12 @@ export default function NovoPet(){
         
       </View>
 
+      <MessageModal
+        visible={modalVisible}
+        mensagem={mensagemModal}
+        onClose={() => setModalVisible(false)}
+      />
+        
     </View>
   )
 }

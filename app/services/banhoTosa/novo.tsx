@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from 'expo-router'
-import {StyleSheet, TouchableOpacity, View, Text, TextInput, Modal} from 'react-native'
+import {StyleSheet, TouchableOpacity, View, Text} from 'react-native'
 import { pets } from '@/app/data/pets'
 import { useState } from 'react'
 import { gerarServicoId, servicos } from '@/app/data/servicos'
@@ -7,11 +7,12 @@ import { clientes } from '@/app/data/clientes'
 import { router } from 'expo-router'
 import Header from '@/app/components/Header'
 import DateInput from '@/app/components/DateInput'
+import MessageModal from '@/app/components/MessageModal'
 
 export default function NovoServico(){
   const {id} = useLocalSearchParams()
 
-  const [menuVisible, setMenuVisible] = useState(false)
+  const [messageVisible, setMessageVisible] = useState(false)
   const [mensagem, setMensagem] = useState('')
 
   const [banho, setBanho] = useState(false)
@@ -26,18 +27,11 @@ export default function NovoServico(){
     
     if (!cliente) return
     
-    if (!data) {
-      setMensagem('Selecione uma data')
-      setMenuVisible(true)
+    if (!data || (!banho && !tosa)) {
+      setMensagem('Preencha os campos obrigátorios (*)')
+      setMessageVisible(true)
       return
     }
-
-    if(!banho && !tosa){
-      setMensagem('Selecione pelo menos um serviço')
-      setMenuVisible(true)
-      return
-    }
-
 
     if(banho) {
       const pontos = 10
@@ -69,6 +63,20 @@ export default function NovoServico(){
       cliente.pontos = (cliente.pontos || 0) + pontos
     }
 
+    if(!pet){
+      return(
+        <View style={styles.container}>
+    
+          <MessageModal
+            visible={true}
+            mensagem='Ops! Não conseguimos localizar os dados deste pet. Você será redirecionado para página home ;).'
+            onClose={() => router.replace("/")}
+          />
+    
+        </View>
+      )
+    }
+
     router.back()
   }
 
@@ -82,11 +90,12 @@ export default function NovoServico(){
       <View style={styles.container}>
 
         <DateInput
-          placeholder='Data'
+          placeholder='Data*'
           value={data}
           onChange={setData}
         />
-        
+
+        <Text>Selecione um Serviço*</Text>
         <TouchableOpacity onPress={() => setBanho(!banho)}>
           <Text>{banho ? '[X]' : '[  ]'} Banho</Text>
         </TouchableOpacity>
@@ -104,32 +113,11 @@ export default function NovoServico(){
         
       </View>
 
-      <Modal
-        visible={menuVisible}
-        transparent
-        animationType='fade'
-        onRequestClose={() => setMenuVisible(false)}
-      >
-        <View style={stylesModal.overlay}>
-
-          <View style={stylesModal.menu}>
-
-            <Text style={stylesModal.title}>
-              {mensagem}
-            </Text>
-
-            <TouchableOpacity
-              style={stylesModal.button}
-              onPress={() => setMenuVisible(false)}
-            >
-              <Text>Ok</Text>
-            </TouchableOpacity>
-
-          </View>
-
-        </View>
-
-      </Modal>
+      <MessageModal
+        visible={messageVisible}
+        mensagem={mensagem}
+        onClose={() => setMessageVisible(false)}
+      />
 
     </View>
   )
@@ -153,30 +141,4 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "#FFF"
   }
-})
-
-const stylesModal = StyleSheet.create({
-    overlay: {
-        flex: 1,
-        backgroundColor: "rgba(0,0,0,0.5)",
-        justifyContent: "center",
-        alignItems: "center"
-    },
-    menu: {
-        width: 260,
-        backgroundColor: "#fff",
-        borderRadius: 12,
-        padding: 16
-    },
-    title: {
-        fontSize: 16,
-        fontWeight: "bold",
-        marginBottom: 10
-    },
-    button: {
-        padding: 12
-    },
-    buttonDanger: {
-        padding: 12
-    }
 })

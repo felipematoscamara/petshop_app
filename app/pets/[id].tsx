@@ -4,6 +4,7 @@ import { pets } from '../data/pets'
 import Header from '../components/Header'
 import { useFocusEffect } from 'expo-router'
 import { useCallback, useState } from 'react'
+import MessageModal from '../components/MessageModal'
 
 export default function Details(){
     const {id} = useLocalSearchParams()
@@ -23,7 +24,13 @@ export default function Details(){
     if(!petAtual){
         return(
           <View style={styles.container}>
-            <Text>Pet não encontrado</Text>
+            
+            <MessageModal
+              visible={true}
+              mensagem='Ops! Não conseguimos localizar os dados deste pet. Você será redirecionado para página home ;).'
+              onClose={() => router.replace('/')}
+            />
+
           </View>
         )
     }
@@ -101,9 +108,12 @@ export default function Details(){
 
           <View style={styles.container}>
 
-            <Text>Nome: {petAtual.nome}</Text>
+            <Text>{petAtual.nome}</Text>
             <Text>Espécie: {petAtual.especie}</Text>
-            <Text>Raça: {petAtual.raca}</Text>
+            <Text>{petAtual.raca
+              ? `Raça: ${petAtual.raca}`
+              : 'Raça: Não informada'}
+            </Text>
             <Text>{petAtual.nascimento
               ? 'Nascimento: ' + new Date(petAtual.nascimento).toLocaleDateString('pt-BR')
               : 'Nascimento: Não informado'}

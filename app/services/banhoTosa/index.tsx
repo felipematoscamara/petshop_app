@@ -4,8 +4,9 @@ import { pets } from '@/app/data/pets'
 import { useCallback, useState } from 'react'
 import { servicos } from '@/app/data/servicos'
 import Header from '@/app/components/Header'
+import MessageModal from '@/app/components/MessageModal'
 
-export default function banhoTosa(){
+export default function BanhoTosa(){
   const {id} = useLocalSearchParams()
   const pet = pets.find(p => p.id === id)
 
@@ -48,7 +49,13 @@ export default function banhoTosa(){
   if(!pet){
     return(
       <View style={styles.container}>
-        <Text>Pet não encontrado</Text>
+        
+        <MessageModal
+          visible={true}
+          mensagem='Ops! Não conseguimos localizar os dados deste pet. Você será redirecionado para página home ;).'
+          onClose={() => router.replace("/")}
+        />
+
       </View>
     )
   }
@@ -126,7 +133,7 @@ export default function banhoTosa(){
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={stylesModal.button}
+              style={stylesModal.buttonDanger}
               onPress={() => {
                 setMenuVisible(false)
                 excluirServico()

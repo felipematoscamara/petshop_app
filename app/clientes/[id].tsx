@@ -6,6 +6,7 @@ import { pets } from "../data/pets"
 import { useCallback, useState } from "react"
 import { servicos } from "../data/servicos"
 import Header from "../components/Header"
+import MessageModal from "../components/MessageModal"
 
 export default function Cliente(){
     const {id} = useLocalSearchParams()
@@ -46,7 +47,13 @@ export default function Cliente(){
     if (!clienteAtual){
         return(
             <View style={styles.container}>
-                <Text>Cliente não encontrado</Text>
+
+                <MessageModal
+                    visible={true}
+                    mensagem="Ops! Não conseguimos localizar os dados deste cliente. Você será redirecionado para página home ;)."
+                    onClose={() => router.replace("/")}
+                />
+
             </View>
         )
     }
@@ -133,8 +140,14 @@ export default function Cliente(){
                     ListHeaderComponent={
                         <View>
                             <Text>{clienteAtual.nome} ⭐{totalPontos}</Text>
-                            <Text>{clienteAtual.telefone}</Text>                                
-                            <Text>{clienteAtual.endereco}</Text>
+                            <Text>{clienteAtual.telefone
+                                ? `Telefone: ${clienteAtual.telefone}`
+                                : 'Telefone: Não informado'}
+                            </Text>                                
+                            <Text>{clienteAtual.endereco
+                                ? `Endereço: ${clienteAtual.endereco}`
+                                : 'Endereço: Não informado'}
+                            </Text>
                             <Text>Pets cadastrados:</Text>
                         </View>
                     }
