@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useFocusEffect } from "expo-router"
-import {StyleSheet, Text, View, TouchableOpacity, FlatList, Modal} from 'react-native'
+import {StyleSheet, Text, View, TouchableOpacity, FlatList} from 'react-native'
 import { clientes } from "../data/clientes"
 import { router } from "expo-router"
 import { pets } from "../data/pets"
@@ -7,6 +7,7 @@ import { useCallback, useState } from "react"
 import { servicos } from "../data/servicos"
 import Header from "../components/Header"
 import MessageModal from "../components/MessageModal"
+import MenuModal from "../components/MenuModal"
 
 export default function Cliente(){
     const {id} = useLocalSearchParams()
@@ -58,11 +59,9 @@ export default function Cliente(){
         )
     }
 
-
     function abrirMenu() {
         setMenuVisible(true)
     }
-
 
     function excluirCliente() {
         const index = clientes.findIndex(c => c.id === id);
@@ -77,52 +76,27 @@ export default function Cliente(){
     return(
         <View style={{flex: 1}}>
 
-            <Modal
+            <MenuModal
                 visible={menuVisible}
-                transparent
-                animationType="fade"
-                onRequestClose={() => setMenuVisible(false)}
-            >
-                <View style={stylesModal.overlay}>
+                onClose={() => setMenuVisible(false)}
+                title={clienteAtual.nome}
+                options={[
+                    {
+                        label: "Editar Cliente",
+                        onPress: () => {
+                            router.push(`/clientes/editar/${id}`)
+                        }
+                    },
 
-                    <View style={stylesModal.menu}>
-
-                        <Text style={stylesModal.title}>
-                            {clienteAtual.nome}
-                        </Text>
-
-                        <TouchableOpacity
-                            style={stylesModal.button}
-                            onPress={() => {
-                                setMenuVisible(false);
-                                router.push(`/clientes/editar/${id}`);
-                            }}
-                        >
-                            <Text>Editar Cliente</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={stylesModal.buttonDanger}
-                            onPress={() => {
-                                setMenuVisible(false);
-                                excluirCliente();
-                            }}
-                        >
-                            <Text style={{ color: "red" }}>Excluir Cliente</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={stylesModal.button}
-                            onPress={() => setMenuVisible(false)}
-                        >
-                            <Text>Cancelar</Text>
-                        </TouchableOpacity>
-
-                    </View>
-
-                </View>
-
-            </Modal>
+                    {
+                        label: "Excluir Cliente",
+                        isDanger: true,
+                        onPress: () => {
+                            excluirCliente()
+                        }
+                    }
+                ]}
+            />
 
             <View>
                 <Header 
@@ -208,31 +182,5 @@ const styles = StyleSheet.create({
 
     buttonText:{
         color: "#FFF"
-    }
-})
-
-const stylesModal = StyleSheet.create({
-    overlay: {
-        flex: 1,
-        backgroundColor: "rgba(0,0,0,0.5)",
-        justifyContent: "center",
-        alignItems: "center"
-    },
-    menu: {
-        width: 260,
-        backgroundColor: "#fff",
-        borderRadius: 12,
-        padding: 16
-    },
-    title: {
-        fontSize: 16,
-        fontWeight: "bold",
-        marginBottom: 10
-    },
-    button: {
-        padding: 12
-    },
-    buttonDanger: {
-        padding: 12
     }
 })

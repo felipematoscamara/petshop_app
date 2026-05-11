@@ -5,6 +5,7 @@ import Header from '../components/Header'
 import { useFocusEffect } from 'expo-router'
 import { useCallback, useState } from 'react'
 import MessageModal from '../components/MessageModal'
+import MenuModal from '../components/MenuModal'
 
 export default function Details(){
     const {id} = useLocalSearchParams()
@@ -52,52 +53,27 @@ export default function Details(){
   return(
     <View style={{flex: 1}}>
 
-      <Modal
+      <MenuModal
         visible={menuVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setMenuVisible(false)}
-        >
-          <View style={stylesModal.overlay}>
-          
-            <View style={stylesModal.menu}>
-          
-              <Text style={stylesModal.title}>
-                {petAtual.nome}
-              </Text>
-          
-              <TouchableOpacity
-                style={stylesModal.button}
-                onPress={() => {
-                  setMenuVisible(false);
-                    router.push(`/pets/editar/${id}`);
-                }}
-              >
-              <Text>Editar Pet</Text>
-              </TouchableOpacity>
-          
-              <TouchableOpacity
-                style={stylesModal.buttonDanger}
-                  onPress={() => {
-                    setMenuVisible(false);
-                    excluirPet();
-                }}
-              >
-              <Text style={{ color: "red" }}>Excluir Pet</Text>
-              </TouchableOpacity>
-          
-              <TouchableOpacity
-                style={stylesModal.button}
-                onPress={() => setMenuVisible(false)}
-              >
-                <Text>Cancelar</Text>
-              </TouchableOpacity>
-          
-            </View>
-          
-          </View>
-          
-        </Modal>
+        onClose={() => setMenuVisible(false)}
+        title={petAtual.nome}
+        options={[
+          {
+            label: "Editar Pet",
+            onPress: () => {
+              router.push(`/pets/editar/${id}`)
+            }
+          },
+
+          {
+            label: "Excluir Pet",
+            isDanger: true,
+            onPress: () => {
+              excluirPet()
+            }
+          }
+        ]}
+      />
 
           <View>
             <Header 
@@ -145,30 +121,4 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFF",
     padding: 20
   }
-})
-
-const stylesModal = StyleSheet.create({
-    overlay: {
-        flex: 1,
-        backgroundColor: "rgba(0,0,0,0.5)",
-        justifyContent: "center",
-        alignItems: "center"
-    },
-    menu: {
-        width: 260,
-        backgroundColor: "#fff",
-        borderRadius: 12,
-        padding: 16
-    },
-    title: {
-        fontSize: 16,
-        fontWeight: "bold",
-        marginBottom: 10
-    },
-    button: {
-        padding: 12
-    },
-    buttonDanger: {
-        padding: 12
-    }
 })

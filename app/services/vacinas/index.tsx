@@ -1,10 +1,21 @@
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router'
-import { StyleSheet, View, TouchableOpacity, Text, FlatList, Modal } from 'react-native'
+import { StyleSheet, View, TouchableOpacity, Text, FlatList} from 'react-native'
 import { pets } from '../../data/pets'
 import { vacinas } from '@/app/data/vacinas'
 import { useState, useCallback } from 'react'
 import Header from '@/app/components/Header'
 import MessageModal from '@/app/components/MessageModal'
+import MenuModal from '@/app/components/MenuModal'
+
+function formatarData(data?: string) {
+  if (!data) return ""
+
+  const date = new Date(data)
+
+  if (isNaN(date.getTime())) return ""
+
+  return date.toLocaleDateString("pt-BR")
+}
 
 export default function CartaoDeVacinas(){
   const {id} = useLocalSearchParams()
@@ -85,8 +96,8 @@ export default function CartaoDeVacinas(){
             >
               <Text>{item.vacina}</Text>
               <Text>{item.dose}</Text>
-              <Text>{new Date(item.data).toLocaleDateString('pt-BR')}</Text>
-              <Text>{new Date(item.proxima).toLocaleDateString('pt-BR')}</Text>
+              <Text>{formatarData(item.data)}</Text>
+              <Text>{formatarData(item.proxima)}</Text>
             </TouchableOpacity>
           )}
           contentContainerStyle={{ paddingBottom: 50 }}
@@ -106,59 +117,32 @@ export default function CartaoDeVacinas(){
         
       </View>
 
-      <Modal
+      <MenuModal
         visible={menuVisible}
-        transparent
-        animationType='fade'
-        onRequestClose={() => setMenuVisible(false)}
-      >
-        <View style={stylesModal.overlay}>
+        onClose={() => {
+          setMenuVisible(false)
+          setVacinaSelecionada(null)
+        }}
+        title={vacinaSelecionada?.vacina || "Vacina"}
+        options={[
+          {
+            label: "Editar Vacina",
+            onPress: () => {
+              if (!vacinaSelecionada) return
 
-          <View style={stylesModal.menu}>
+              router.push(`/services/vacinas/editar?id=${vacinaSelecionada.id}`)
+            }
+          },
 
-            <Text style={stylesModal.title}>
-              {vacinaSelecionada
-                ? `${vacinaSelecionada.vacina} - ${new Date (vacinaSelecionada.data).toLocaleDateString('pt-BR')}`
-                : ''
-              }
-            </Text>
-
-            <TouchableOpacity
-              style={stylesModal.button}
-              onPress={() => {
-                if (!vacinaSelecionada) return
-                setMenuVisible(false)
-                router.push({
-                  pathname: "/services/vacinas/editar",
-                  params: { id: vacinaSelecionada.id }
-                })
-              }}
-              >
-              <Text>Editar Vacina</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={stylesModal.buttonDanger}
-              onPress={() => {
-                setMenuVisible(false)
-                excluirVacina()
-              }}
-              >
-              <Text style={{color: 'red'}}>Excluir Vacina</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={stylesModal.button}
-              onPress={() => setMenuVisible(false)}
-              >
-              <Text>Cancelar</Text>
-            </TouchableOpacity>
-
-          </View>
-
-        </View>
-
-      </Modal>
+          {
+            label: "Excluir Vacina",
+            isDanger: true,
+            onPress: () => {
+              excluirVacina()
+            }
+          }
+        ]}
+      />
 
     </View>
   )
@@ -185,30 +169,4 @@ const styles = StyleSheet.create({
   buttonText:{
     color: '#FFF'
   }
-})
-
-const stylesModal = StyleSheet.create({
-    overlay: {
-        flex: 1,
-        backgroundColor: "rgba(0,0,0,0.5)",
-        justifyContent: "center",
-        alignItems: "center"
-    },
-    menu: {
-        width: 260,
-        backgroundColor: "#fff",
-        borderRadius: 12,
-        padding: 16
-    },
-    title: {
-        fontSize: 16,
-        fontWeight: "bold",
-        marginBottom: 10
-    },
-    button: {
-        padding: 12
-    },
-    buttonDanger: {
-        padding: 12
-    }
 })
