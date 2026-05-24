@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet} from "react-native
 import { clientes } from "@/app/data/clientes"
 import { useState } from "react"
 import Header from "@/app/components/Header"
+import MessageModal from "@/app/components/MessageModal";
 
 export default function EditarCliente(){
     
@@ -15,8 +16,17 @@ export default function EditarCliente(){
     const [telefone, setTelefone] = useState(cliente?.telefone || "")
     const [endereco, setEndereco] = useState(cliente?.endereco || "")
 
+    const [messageVisible, setMessageVisible] = useState(false)
+    const [mensagem, setMensagem] = useState("")
+
     function salvar(){
         if(!cliente) return
+
+        if (!nome.trim()) {
+            setMensagem("Preencha os campos obrigatórios (*)")
+            setMessageVisible(true)
+            return
+        }
 
         cliente.nome = nome
         cliente.telefone = telefone
@@ -34,36 +44,42 @@ export default function EditarCliente(){
 
             <View style={styles.container}>
 
-                <Text>Nome</Text>
                 <TextInput
                     style={styles.input}
                     value={nome}
                     onChangeText={setNome}
+                    placeholder="Nome*"
                 />
 
-                <Text>Telefone</Text>
                 <TextInput
                     style={styles.input}
                     value={telefone}
                     onChangeText={setTelefone}
                     keyboardType="phone-pad"
+                    placeholder="Telefone"
                 />
 
-                <Text>Endereço</Text>
                 <TextInput 
                     style={styles.input}
                     value={endereco}
                     onChangeText={setEndereco}
+                    placeholder="Endereço"
                 />
 
                 <TouchableOpacity
                     style={styles.button}
                     onPress={salvar}
                 >
-                    <Text style={styles.buttonText}>Salvar</Text>
+                    <Text style={styles.buttonText}>Salvar Alterações</Text>
                 </TouchableOpacity>
 
             </View>
+
+            <MessageModal
+                visible={messageVisible}
+                mensagem={mensagem}
+                onClose={() => setMessageVisible(false)}
+            />
         </View>
     )
 }

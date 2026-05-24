@@ -4,6 +4,7 @@ import { pets } from "@/app/data/pets"
 import { useState } from "react"
 import Header from "@/app/components/Header"
 import DateInput from "@/app/components/DateInput"
+import MessageModal from "@/app/components/MessageModal"
 
 export default function EditarPet(){
 
@@ -20,14 +21,23 @@ export default function EditarPet(){
             : null
     )
 
-    function salvar(){
-        if(!pet) return
+    const [messageVisible, setMessageVisible] = useState(false)
+    const [mensagem, setMensagem] = useState("")
+
+    function salvar() {
+        if (!pet) return
+
+        if (!nome.trim() || !especie.trim()) {
+            setMensagem("Preencha os campos obrigatórios (*)")
+            setMessageVisible(true)
+            return
+        }
 
         pet.nome = nome
         pet.especie = especie
         pet.raca = raca
         pet.sexo = sexo
-        pet.nascimento = nascimento?.toISOString()
+        pet.nascimento = nascimento ? nascimento.toISOString() : undefined
 
         router.back()
     }
@@ -41,43 +51,48 @@ export default function EditarPet(){
 
             <View style={styles.container}>
 
-                <Text>Nome</Text>
                 <TextInput 
                     style={styles.input}
                     value={nome}
                     onChangeText={setNome}
+                    placeholder="Nome*"
                 />
 
-                <Text>Espécie</Text>
                 <TextInput 
                     style={styles.input}
                     value={especie}
                     onChangeText={setEspecie}
+                    placeholder="Espécie*"
                 />
 
-                <Text>Raça</Text>
                 <TextInput 
                     style={styles.input}
                     value={raca}
                     onChangeText={setRaca}
+                    placeholder="Raça"
                 />
 
-                <Text>Nascimento</Text>
                 <DateInput 
                     style={styles.input}
                     value={nascimento}
                     onChange={setNascimento}
+                    placeholder="Nascimento"
                 />
 
                 <TouchableOpacity
                     style={styles.button}
                     onPress={salvar}
                 >
-                    <Text style={styles.buttonText}>Salvar</Text>
+                    <Text style={styles.buttonText}>Salvar Alterações</Text>
                 </TouchableOpacity>
 
             </View>
 
+            <MessageModal
+                visible={messageVisible}
+                mensagem={mensagem}
+                onClose={() => setMessageVisible(false)}
+            />
         </View>
     )
 }
