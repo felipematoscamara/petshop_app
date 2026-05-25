@@ -8,15 +8,6 @@ import Header from '@/app/components/Header'
 import DateInput from '@/app/components/DateInput'
 import MessageModal from '@/app/components/MessageModal'
 
-type Servico = {
-  id: string
-  idPet: string
-  idCliente: string
-  servico: string
-  data: string
-  pontos: number
-}
-
 export default function EditarServico() {
   const { id } = useLocalSearchParams()
 

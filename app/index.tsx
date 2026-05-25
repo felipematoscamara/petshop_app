@@ -1,88 +1,146 @@
-import { TextInput, FlatList, StyleSheet, Text, TouchableOpacity, View} from 'react-native'
+import { TextInput, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { router, useFocusEffect } from 'expo-router'
 import { clientes } from './data/clientes'
 import { useCallback, useState } from 'react'
 import { pets } from './data/pets'
+import { vacinas } from './data/vacinas'
+import { verificarStatusVacina } from './utils/verificarStatusVacina'
 import HeaderHome from './components/HeaderHome'
 
-export default function ClientesPage(){
+type StatusPet = "atrasada" | "proxima" | "em-dia" | "sem-vacina"
+
+type Vacina = {
+  id: string
+  idPet: string
+  idVacina: string
+  vacina: string
+  dose: string
+  data: string
+  proxima?: string
+}
+
+export default function ClientesPage() {
   const [busca, setBusca] = useState('')
   const [listaClientes, setListaClientes] = useState(clientes)
-  const clientesFiltrados = listaClientes.filter(cliente => cliente.nome?.toLowerCase().includes(busca.toLowerCase()))
+  
+  const [petsPorCliente, setPetsPorCliente] = useState<Record<string, number>>({})
+  const [clientesComAlerta, setClientesComAlerta] = useState<Record<string, boolean>>({})
+
+  function obterUltimaVacinaDoTipo(idPet: string, idVacina: string) {
+    const vacinasDoPet = vacinas.filter(
+      (v: Vacina) => v.idPet === idPet && v.idVacina === idVacina
+    )
+    if (vacinasDoPet.length === 0) return null
+
+    return vacinasDoPet.reduce((maisRecente: Vacina, atual: Vacina) => {
+      return new Date(atual.data).getTime() > new Date(maisRecente.data).getTime()
+        ? atual
+        : maisRecente
+    })
+  }
+
+  function obterStatusPet(idPet: string): StatusPet {
+    const ultimaV11 = obterUltimaVacinaDoTipo(idPet, "v11")
+    const ultimaAntirrabica = obterUltimaVacinaDoTipo(idPet, "antirrabica")
+    const ultimasVacinas = [ultimaV11, ultimaAntirrabica].filter(Boolean) as Vacina[]
+
+    if (ultimasVacinas.length === 0) return "sem-vacina"
+
+    const possuiAtrasada = ultimasVacinas.some(
+      v => verificarStatusVacina(v.proxima || "") === "atrasada"
+    )
+    if (possuiAtrasada) return "atrasada"
+
+    const possuiProxima = ultimasVacinas.some(
+      v => verificarStatusVacina(v.proxima || "") === "proxima"
+    )
+    if (possuiProxima) return "proxima"
+
+    return "em-dia"
+  }
 
   useFocusEffect(
     useCallback(() => {
       setListaClientes([...clientes])
+
+      const totalPets = pets.reduce<Record<string, number>>((acc, pet) => {
+        acc[pet.idCliente] = (acc[pet.idCliente] || 0) + 1
+        return acc
+      }, {})
+      setPetsPorCliente(totalPets)
+
+      const alertas: Record<string, boolean> = {}
+      clientes.forEach(cliente => {
+        const petsDoCliente = pets.filter(pet => pet.idCliente === cliente.id)
+        const temAlerta = petsDoCliente.some(pet => {
+          const status = obterStatusPet(pet.id)
+          return status === "atrasada" || status === "proxima"
+        })
+        alertas[cliente.id] = temAlerta
+      })
+      setClientesComAlerta(alertas)
     }, [])
   )
-  return(
-    <View style={{flex: 1}}>
 
-      <View>
-        <HeaderHome titulo='PetShop Manager'/>
-      </View>
+  const clientesFiltrados = listaClientes.filter(cliente =>
+    cliente.nome?.toLowerCase().includes(busca.toLowerCase())
+  )
+
+  return (
+    <View style={{ flex: 1 }}>
+      <HeaderHome titulo='PetShop Manager' />
 
       <View style={styles.container}>
-
         <View>
           <TextInput
-              placeholder='🔎 Buscar cliente...'
-              value={busca}
-              onChangeText={setBusca}
-              
-              style={{
-                width: "100%",
-                borderWidth: 1,
-                marginBottom: 10,
-                padding: 8,
-                borderRadius: 6,
-                borderColor: "#CCC"
-              }}
-              />
+            placeholder='🔎 Buscar cliente...'
+            value={busca}
+            onChangeText={setBusca}
+            style={styles.input}
+          />
 
-              {clientesFiltrados.length === 0 && (
-                <Text style={{margin: 10}}>Nenhum cliente encontrado</Text>
-              )}
+          {clientesFiltrados.length === 0 && (
+            <Text style={{ margin: 10 }}>Nenhum cliente encontrado</Text>
+          )}
         </View>
 
-        <FlatList 
+        <FlatList
           data={clientesFiltrados}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) =>{
+          renderItem={({ item }) => {
+            const quantidadePets = petsPorCliente[item.id] || 0
+            const temAlerta = clientesComAlerta[item.id] || false
 
-          const petsPorCliente = pets.reduce((acc, pet) => {
-            acc[pet.idCliente] = (acc[pet.idCliente] || 0) + 1 
-            return acc
-          }, {})
+            return (
+              <TouchableOpacity
+                onPress={() => router.push(`/clientes/${item.id}`)}
+                style={styles.card}
+              >
+                <View style={styles.cardLinha}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.nome}>{item.nome}</Text>
+                    <Text style={styles.subtexto}>
+                      🐶🐱 {quantidadePets} {quantidadePets === 1 ? "Pet" : "Pets"}
+                    </Text>
+                  </View>
 
-          const quantidadePets = petsPorCliente[item.id] || 0
-
-          return(
-            <TouchableOpacity
-              onPress={() => router.push(`/clientes/${item.id}`)}
-            >
-              
-              <View style={{ margin: 10, }}>
-                <Text>
-                  {item.nome} {"\n"}
-                  🐶🐱 {quantidadePets} {quantidadePets === 1 ? "Pet" : "Pets"}
-                </Text>
-              </View>
-
-            </TouchableOpacity>
-          )}}
-          contentContainerStyle={{ paddingBottom: 50 }}
+                  {temAlerta && (
+                    <Text style={styles.alerta}>⚠️</Text>
+                  )}
+                </View>
+              </TouchableOpacity>
+            )
+          }}
+          contentContainerStyle={{ paddingBottom: 80 }}
         />
-        
+
         <TouchableOpacity
-            style={styles.button}
-            onPress={() => router.push("/clientes/novo")}
+          style={styles.button}
+          onPress={() => router.push("/clientes/novo")}
         >
           <Text style={styles.buttonText}>Novo Cliente</Text>
         </TouchableOpacity>
-
       </View>
-
     </View>
   )
 }
@@ -93,8 +151,37 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20
   },
-  
-  button:{
+  input: {
+    width: "100%",
+    borderWidth: 1,
+    marginBottom: 10,
+    padding: 8,
+    borderRadius: 6,
+    borderColor: "#CCC"
+  },
+  card: {
+    marginBottom: 10,
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: "#F5F5F5"
+  },
+  cardLinha: {
+    flexDirection: "row",
+    alignItems: "center"
+  },
+  nome: {
+    fontSize: 16,
+    fontWeight: "600"
+  },
+  subtexto: {
+    marginTop: 4,
+    color: "#555"
+  },
+  alerta: {
+    fontSize: 18,
+    marginLeft: 10
+  },
+  button: {
     position: "absolute",
     bottom: 20,
     left: 20,
@@ -104,9 +191,8 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     alignItems: "center"
   },
-
-  buttonText:{
-    color: "#FFF"
+  buttonText: {
+    color: "#FFF",
+    fontWeight: "600"
   }
-
 })

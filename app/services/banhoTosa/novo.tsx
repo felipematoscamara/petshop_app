@@ -89,20 +89,33 @@ export default function NovoServico(){
 
       <View style={styles.container}>
 
+        <Text style={styles.label}>
+            Selecione um Serviço*
+        </Text>
+
+        <TouchableOpacity
+          onPress={() => setBanho(!banho)}
+          style={styles.opcao}
+        >
+          <Text>
+            {banho ? '(X)' : '( )'} Banho
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => setTosa(!tosa)}
+          style={[styles.opcao, {marginBottom: 10}]}
+        >
+          <Text>
+            {tosa ? '(X)' : '( )'} Tosa
+          </Text>
+        </TouchableOpacity>
+
         <DateInput
           placeholder='Data*'
           value={data}
           onChange={setData}
         />
-
-        <Text>Selecione um Serviço*</Text>
-        <TouchableOpacity onPress={() => setBanho(!banho)}>
-          <Text>{banho ? '[X]' : '[  ]'} Banho</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={() => setTosa(!tosa)}>
-          <Text>{tosa ? '[X]' : '[  ]'} Tosa</Text>
-        </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.button} 
@@ -134,11 +147,19 @@ const styles = StyleSheet.create({
     backgroundColor: "#015DAD",
     padding: 12,
     borderRadius: 6,
-    alignItems: 'center',
-    marginTop: 10
+    alignItems: 'center'
   },
 
   buttonText: {
     color: "#FFF"
-  }
+  },
+
+  label: { 
+    marginBottom: 10,
+    fontWeight: "600"
+  },
+
+  opcao: {
+    paddingVertical: 8
+  } 
 })
