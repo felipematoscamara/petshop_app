@@ -1,12 +1,12 @@
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router'
-import { StyleSheet, View, TouchableOpacity, Text, FlatList } from 'react-native'
-import { pets } from '../../data/pets'
-import { vacinas } from '@/app/data/vacinas'
+import { StyleSheet, View, TouchableOpacity, Text, FlatList, ActivityIndicator } from 'react-native'
 import { useState, useCallback } from 'react'
 import Header from '@/app/components/Header'
 import MessageModal from '@/app/components/MessageModal'
 import MenuModal from '@/app/components/MenuModal'
 import { verificarStatusVacina } from '@/app/utils/verificarStatusVacina'
+import { buscarPets } from '@/app/storage/petsStorage'
+import { buscarVacinas, salvarVacinas } from '@/app/storage/vacinasStrorage'
 
 type Vacina = {
   id: string
@@ -19,25 +19,42 @@ type Vacina = {
 
 function formatarData(data?: string) {
   if (!data) return ""
-
   const date = new Date(data)
-
   if (isNaN(date.getTime())) return ""
-
   return date.toLocaleDateString("pt-BR")
 }
 
 export default function CartaoDeVacinas() {
   const { id } = useLocalSearchParams()
-  const pet = pets.find(p => p.id === id)
 
-  const [listaVacinas, setListaVacinas] = useState(vacinas)
+  const [pet, setPet] = useState<any>(null)
+  const [listaVacinas, setListaVacinas] = useState<Vacina[]>([])
+  const [loading, setLoading] = useState(true)
+
   const [menuVisible, setMenuVisible] = useState(false)
   const [vacinaSelecionada, setVacinaSelecionada] = useState<Vacina | null>(null)
 
   useFocusEffect(
     useCallback(() => {
-      setListaVacinas([...vacinas])
+      async function carregarDadosVacinas() {
+        setLoading(true)
+        try {
+          const [allPets, allVacinas] = await Promise.all([
+            buscarPets(),
+            buscarVacinas()
+          ])
+
+          const petEncontrado = allPets.find((p: any) => p.id === id)
+          setPet(petEncontrado || null)
+          setListaVacinas(allVacinas)
+        } catch (error) {
+          console.error("Erro ao carregar cartão de vacinas:", error)
+        } finally {
+          setLoading(false)
+        }
+      }
+
+      carregarDadosVacinas()
     }, [id])
   )
 
@@ -46,9 +63,7 @@ export default function CartaoDeVacinas() {
       v => v.idPet === idPet && v.vacina === nomeVacina
     )
 
-    if (vacinasDoTipo.length === 0) {
-      return null
-    }
+    if (vacinasDoTipo.length === 0) return null
 
     return vacinasDoTipo.reduce((maisRecente, atual) => {
       return new Date(atual.data).getTime() > new Date(maisRecente.data).getTime()
@@ -57,24 +72,38 @@ export default function CartaoDeVacinas() {
     })
   }
 
-  const excluirVacina = () => {
+  const excluirVacina = async () => {
     if (!vacinaSelecionada) return
 
-    const novaLista = listaVacinas.filter(
-      v => v.id !== vacinaSelecionada.id
-    )
+    try {
+    
+      const todasVacinas = await buscarVacinas()
 
-    vacinas.length = 0
-    vacinas.push(...novaLista)
+      const novaListaGeral = todasVacinas.filter(
+        (v: Vacina) => v.id !== vacinaSelecionada.id
+      )
 
-    setListaVacinas(novaLista)
-    setMenuVisible(false)
-    setVacinaSelecionada(null)
+      await salvarVacinas(novaListaGeral)
+
+      setListaVacinas(novaListaGeral)
+      setMenuVisible(false)
+      setVacinaSelecionada(null)
+    } catch (error) {
+      console.error("Erro ao excluir vacina:", error)
+    }
   }
 
   const vacinasDoPet = listaVacinas.filter(
     v => v.idPet === id
   )
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#015DAD" />
+      </View>
+    )
+  }
 
   if (!pet) {
     return (
@@ -91,7 +120,7 @@ export default function CartaoDeVacinas() {
   return (
     <View style={{ flex: 1 }}>
       <View>
-        <Header titulo='Cartão de Vacinas' />
+        <Header titulo={`Vacinas: ${pet.nome}`} />
       </View>
 
       <View style={styles.container}>
@@ -126,15 +155,17 @@ export default function CartaoDeVacinas() {
                   )}
                 </View>
 
-                <Text>{item.dose}</Text>
-                <Text>{formatarData(item.data)}</Text>
-                <Text>{formatarData(item.proxima)}</Text>
+                <Text style={styles.infoTexto}>Dose: {item.dose}</Text>
+                <Text style={styles.infoTexto}>Aplicada em: {formatarData(item.data)}</Text>
+                {item.proxima && (
+                  <Text style={styles.infoTexto}>Próxima dose: {formatarData(item.proxima)}</Text>
+                )}
               </TouchableOpacity>
             )
           }}
-          contentContainerStyle={{ paddingBottom: 50 }}
+          contentContainerStyle={{ paddingBottom: 80 }}
           ListEmptyComponent={
-            <Text>Nenhuma vacina cadastrada</Text>
+            <Text style={styles.vazioTexto}>Nenhuma vacina cadastrada para este pet</Text>
           }
         />
 
@@ -158,6 +189,7 @@ export default function CartaoDeVacinas() {
             label: "Editar Vacina",
             onPress: () => {
               if (!vacinaSelecionada) return
+              setMenuVisible(false)
               router.push(`/services/vacinas/editar?id=${vacinaSelecionada.id}`)
             }
           },
@@ -180,7 +212,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFF",
     padding: 20
   },
-
   button: {
     position: "absolute",
     backgroundColor: '#015DAD',
@@ -191,43 +222,49 @@ const styles = StyleSheet.create({
     left: 20,
     right: 20
   },
-
   buttonText: {
-    color: '#FFF'
+    color: '#FFF',
+    fontWeight: "600"
   },
-
   cardVacina: {
     marginBottom: 12,
-    padding: 12,
+    padding: 14,
     borderRadius: 8,
-    backgroundColor: "#F5F5F5"
-  },
-
-  cardAtrasada: {
+    backgroundColor: "#F5F5F5",
     borderWidth: 1,
+    borderColor: "#E0E0E0"
+  },
+  cardAtrasada: {
     borderColor: "#D32F2F",
     backgroundColor: "#FFEBEE"
   },
-
   cardProxima: {
-    borderWidth: 1,
     borderColor: "#F9A825",
     backgroundColor: "#FFF8E1"
   },
-
   linhaTopo: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 4
+    marginBottom: 6
   },
-
   nomeVacina: {
     fontSize: 16,
-    fontWeight: "600"
+    fontWeight: "600",
+    color: "#333"
   },
-
+  infoTexto: {
+    fontSize: 14,
+    color: "#555",
+    marginTop: 2
+  },
   alerta: {
     fontSize: 18
+  },
+  vazioTexto: {
+    textAlign: "center",
+    color: "#7F8C8D",
+    marginTop: 20,
+    fontStyle: "italic"
   }
 })

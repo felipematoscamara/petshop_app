@@ -1,15 +1,16 @@
 import { useLocalSearchParams, router } from 'expo-router'
 import { StyleSheet, TouchableOpacity, View, Text, TextInput } from 'react-native'
-import { pets } from '@/app/data/pets'
 import { useState } from 'react'
-import { gerarVacinaId, vacinas } from '@/app/data/vacinas'
+import { gerarVacinaId } from '@/app/data/vacinas'
 import Header from '@/app/components/Header'
 import DateInput from '@/app/components/DateInput'
 import MessageModal from '@/app/components/MessageModal'
+import { buscarPets } from '@/app/storage/petsStorage'
+import { buscarVacinas, salvarVacinas } from '@/app/storage/vacinasStrorage'
 
 export default function NovaVacina() {
+
   const { id } = useLocalSearchParams()
-  const pet = pets.find(p => p.id === id)
 
   const [vacinaSelecionada, setVacinaSelecionada] = useState('')
   const [dose, setDose] = useState('')
@@ -19,100 +20,106 @@ export default function NovaVacina() {
   const [messageVisible, setMessageVisible] = useState(false)
   const [mensagem, setMensagem] = useState('')
 
-  function salvarVacina() {
-    if (!vacinaSelecionada || !dose || !data) {
+  async function salvarVacina() {
+
+    const pets = await buscarPets()
+
+    const pet = pets.find((p: any) => p.id === id)
+
+    if (!pet) {
+      setMensagem('Ops! Não conseguimos localizar os dados deste pet.')
+      setMessageVisible(true)
+      return
+    }
+
+    if (!vacinaSelecionada || !dose || !data || !proxima) {
       setMensagem('Preencha os campos obrigatórios (*)')
       setMessageVisible(true)
       return
     }
 
+    const vacinas = await buscarVacinas()
+
+    let nomeVacina = ''
+
     if (vacinaSelecionada === 'v11') {
-      vacinas.push({
-        id: gerarVacinaId(),
-        idVacina: 'v11',
-        vacina: 'V11',
-        dose,
-        data: data.toISOString(),
-        proxima: proxima?.toISOString(),
-        idPet: id
-      })
+      nomeVacina = 'V11'
     }
 
     if (vacinaSelecionada === 'antirrabica') {
-      vacinas.push({
-        id: gerarVacinaId(),
-        idVacina: 'antirrabica',
-        vacina: 'Antirrábica',
-        dose,
-        data: data.toISOString(),
-        proxima: proxima?.toISOString(),
-        idPet: id
-      })
+      nomeVacina = 'Antirrábica'
     }
 
     if (vacinaSelecionada === 'vanguard') {
-      vacinas.push({
-        id: gerarVacinaId(),
-        idVacina: 'vanguard',
-        vacina: 'Vanguard',
-        dose,
-        data: data.toISOString(),
-        proxima: proxima?.toISOString(),
-        idPet: id
-      })
+      nomeVacina = 'Vanguard'
     }
 
     if (vacinaSelecionada === 'anticio') {
-      vacinas.push({
-        id: gerarVacinaId(),
-        idVacina: 'anticio',
-        vacina: 'Anti-cio',
-        dose,
-        data: data.toISOString(),
-        proxima: proxima?.toISOString(),
-        idPet: id
-      })
+      nomeVacina = 'Anti-cio'
     }
+
+    vacinas.push({
+      id: gerarVacinaId(),
+      idVacina: vacinaSelecionada,
+      vacina: nomeVacina,
+      dose,
+      data: data.toISOString(),
+      proxima: proxima ? proxima.toISOString() : null,
+      idPet: String(id)
+    })
+
+    await salvarVacinas(vacinas)
 
     router.back()
   }
 
-  if (!pet) {
-    return (
-      <View style={styles.container}>
-        <MessageModal
-          visible={true}
-          mensagem='Ops! Não conseguimos localizar os dados deste pet. Você será redirecionado para página home ;).'
-          onClose={() => router.replace("/")}
-        />
-      </View>
-    )
-  }
-
   return (
     <View style={{ flex: 1 }}>
+
       <View>
         <Header titulo='Nova Vacina' />
       </View>
 
       <View style={styles.container}>
 
-        <Text style={styles.label}>Selecione uma Vacina*</Text>
+        <Text style={styles.label}>
+          Selecione uma Vacina*
+        </Text>
 
-        <TouchableOpacity onPress={() => setVacinaSelecionada('v11')} style={styles.opcao}>
-          <Text>{vacinaSelecionada === 'v11' ? '(X)' : '( )'} V11</Text>
+        <TouchableOpacity
+          onPress={() => setVacinaSelecionada('v11')}
+          style={styles.opcao}
+        >
+          <Text>
+            {vacinaSelecionada === 'v11' ? '(X)' : '( )'} V11
+          </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => setVacinaSelecionada('antirrabica')} style={styles.opcao}>
-          <Text>{vacinaSelecionada === 'antirrabica' ? '(X)' : '( )'} Antirrábica</Text>
+        <TouchableOpacity
+          onPress={() => setVacinaSelecionada('antirrabica')}
+          style={styles.opcao}
+        >
+          <Text>
+            {vacinaSelecionada === 'antirrabica' ? '(X)' : '( )'} Antirrábica
+          </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => setVacinaSelecionada('vanguard')} style={styles.opcao}>
-          <Text>{vacinaSelecionada === 'vanguard' ? '(X)' : '( )'} Vanguard</Text>
+        <TouchableOpacity
+          onPress={() => setVacinaSelecionada('vanguard')}
+          style={styles.opcao}
+        >
+          <Text>
+            {vacinaSelecionada === 'vanguard' ? '(X)' : '( )'} Vanguard
+          </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => setVacinaSelecionada('anticio')} style={styles.opcao}>
-          <Text>{vacinaSelecionada === 'anticio' ? '(X)' : '( )'} Anti-cio</Text>
+        <TouchableOpacity
+          onPress={() => setVacinaSelecionada('anticio')}
+          style={styles.opcao}
+        >
+          <Text>
+            {vacinaSelecionada === 'anticio' ? '(X)' : '( )'} Anti-cio
+          </Text>
         </TouchableOpacity>
 
         <TextInput
@@ -129,7 +136,7 @@ export default function NovaVacina() {
         />
 
         <DateInput
-          placeholder='Próxima'
+          placeholder='Próxima*'
           value={proxima}
           onChange={setProxima}
         />
@@ -138,7 +145,9 @@ export default function NovaVacina() {
           onPress={salvarVacina}
           style={styles.button}
         >
-          <Text style={styles.buttonText}>Salvar</Text>
+          <Text style={styles.buttonText}>
+            Salvar
+          </Text>
         </TouchableOpacity>
 
       </View>
@@ -148,6 +157,7 @@ export default function NovaVacina() {
         mensagem={mensagem}
         onClose={() => setMessageVisible(false)}
       />
+
     </View>
   )
 }

@@ -1,41 +1,102 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet} from "react-native"
-import { clientes } from "@/app/data/clientes"
-import { useState } from "react"
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native"
+import { useState, useEffect } from "react"
 import Header from "@/app/components/Header"
 import MessageModal from "@/app/components/MessageModal";
+
+import { buscarClientes, salvarClientes } from "@/app/storage/clientesStorage"
 
 export default function EditarCliente(){
     
     const params = useLocalSearchParams()
     const id = String(params.id)
 
-    const cliente = clientes.find(c => c.id === id)
+    const [loading, setLoading] = useState(true)
+    const [clienteExiste, setClienteExiste] = useState(true)
 
-    const [nome, setNome] = useState(cliente?.nome || "")
-    const [telefone, setTelefone] = useState(cliente?.telefone || "")
-    const [endereco, setEndereco] = useState(cliente?.endereco || "")
+    const [nome, setNome] = useState("")
+    const [telefone, setTelefone] = useState("")
+    const [endereco, setEndereco] = useState("")
 
     const [messageVisible, setMessageVisible] = useState(false)
     const [mensagem, setMensagem] = useState("")
 
-    function salvar(){
-        if(!cliente) return
+    useEffect(() => {
+        async function carregarCliente() {
+            try {
+                const todosClientes = await buscarClientes()
+                const cliente = todosClientes.find((c: any) => c.id === id)
 
+                if (cliente) {
+                    setNome(cliente.nome)
+                    setTelefone(cliente.telefone || "")
+                    setEndereco(cliente.endereco || "")
+                } else {
+                    setClienteExiste(false)
+                }
+            } catch (error) {
+                console.error("Erro ao carregar cliente:", error)
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        carregarCliente()
+    }, [id])
+
+    async function salvar(){
         if (!nome.trim()) {
             setMensagem("Preencha os campos obrigatórios (*)")
             setMessageVisible(true)
             return
         }
 
-        cliente.nome = nome
-        cliente.telefone = telefone
-        cliente.endereco = endereco
+        try {
+            const todosClientes = await buscarClientes()
 
-        router.back()
+            const listaAtualizada = todosClientes.map((c: any) => {
+                if (c.id === id) {
+                    return {
+                        ...c, 
+                        nome: nome.trim(),
+                        telefone: telefone.trim(),
+                        endereco: endereco.trim()
+                    }
+                }
+                return c 
+            })
+
+            await salvarClientes(listaAtualizada)
+
+            router.back()
+        } catch (error) {
+            console.error("Erro ao salvar cliente:", error)
+            setMensagem("Ops! Não foi possível salvar as alterações.")
+            setMessageVisible(true)
+        }
     }
 
-    return(
+    if (loading) {
+        return (
+            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+                <ActivityIndicator size="large" color="#015DAD" />
+            </View>
+        )
+    }
+
+    if (!clienteExiste) {
+        return (
+            <View style={styles.container}>
+                <MessageModal
+                    visible={true}
+                    mensagem="Ops! Não conseguimos localizar os dados deste cliente. Você será redirecionado."
+                    onClose={() => router.replace("/")}
+                />
+            </View>
+        )
+    }
+
+    return (
         <View style={{flex: 1}}>
 
             <View>
@@ -107,6 +168,7 @@ const styles = StyleSheet.create({
     },
 
     buttonText:{
-        color: "#FFF"
+        color: "#FFF",
+        fontWeight: "600"
     }
 })

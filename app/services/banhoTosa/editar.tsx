@@ -1,26 +1,23 @@
-import { StyleSheet, TouchableOpacity, View, Text } from 'react-native'
+import { StyleSheet, TouchableOpacity, View, Text, ActivityIndicator } from 'react-native'
 import { useEffect, useState } from 'react'
 import { useLocalSearchParams, router } from 'expo-router'
-import { pets } from '@/app/data/pets'
-import { servicos } from '@/app/data/servicos'
-import { clientes } from '@/app/data/clientes'
 import Header from '@/app/components/Header'
 import DateInput from '@/app/components/DateInput'
 import MessageModal from '@/app/components/MessageModal'
+
+import { buscarPets } from '@/app/storage/petsStorage'
+import { buscarServicos, salvarServicos } from '@/app/storage/servicosStorage'
+import { buscarClientes, salvarClientes } from '@/app/storage/clientesStorage'
 
 export default function EditarServico() {
   const { id } = useLocalSearchParams()
 
   const servicoId = Array.isArray(id) ? id[0] : id
-  const servicoAtual = servicos.find(s => s.id === servicoId)
 
-  const pet = servicoAtual
-    ? pets.find(p => p.id === servicoAtual.idPet)
-    : undefined
-
-  const cliente = servicoAtual
-    ? clientes.find(c => c.id === servicoAtual.idCliente)
-    : undefined
+  const [loading, setLoading] = useState(true)
+  const [servicoAtual, setServicoAtual] = useState<any>(null)
+  const [pet, setPet] = useState<any>(null)
+  const [cliente, setCliente] = useState<any>(null)
 
   const [banho, setBanho] = useState(false)
   const [tosa, setTosa] = useState(false)
@@ -30,20 +27,38 @@ export default function EditarServico() {
   const [mensagem, setMensagem] = useState('')
 
   useEffect(() => {
-    if (!servicoAtual) return
+    async function carregarDadosServico() {
+      try {
+        setLoading(true)
+  
+        const [allServicos, allPets, allClientes] = await Promise.all([
+          buscarServicos(),
+          buscarPets(),
+          buscarClientes()
+        ])
 
-    setData(new Date(servicoAtual.data))
+        const sAtual = allServicos.find((s: any) => s.id === servicoId)
+        
+        if (sAtual) {
+          setServicoAtual(sAtual)
+          setPet(allPets.find((p: any) => p.id === sAtual.idPet) || null)
+          setCliente(allClientes.find((c: any) => c.id === sAtual.idCliente) || null)
 
-    if (servicoAtual.servico === 'Banho') {
-      setBanho(true)
+          setData(new Date(sAtual.data))
+          if (sAtual.servico === 'Banho') setBanho(true)
+          if (sAtual.servico === 'Tosa') setTosa(true)
+        }
+      } catch (error) {
+        console.error("Erro ao carregar dados do serviço:", error)
+      } finally {
+        setLoading(false)
+      }
     }
 
-    if (servicoAtual.servico === 'Tosa') {
-      setTosa(true)
-    }
-  }, [servicoAtual])
+    carregarDadosServico()
+  }, [servicoId])
 
-  function salvarServico() {
+  async function salvarServico() {
     if (!servicoAtual || !cliente) return
 
     if (!data || (!banho && !tosa)) {
@@ -52,87 +67,116 @@ export default function EditarServico() {
       return
     }
 
-    let novoServico = ''
-    let novosPontos = 0
+    try {
+      let novoServico = ''
+      let novosPontos = 0
 
-    if (banho) {
-      novoServico = 'Banho'
-      novosPontos = 10
-    }
-
-    if (tosa) {
-      novoServico = 'Tosa'
-      novosPontos = 15
-    }
-
-    cliente.pontos -= servicoAtual.pontos
-
-    cliente.pontos += novosPontos
-
-    const indice = servicos.findIndex(
-      s => s.id === servicoAtual.id
-    )
-
-    if (indice !== -1) {
-      servicos[indice] = {
-        ...servicoAtual,
-        servico: novoServico,
-        data: data.toISOString(),
-        pontos: novosPontos
+      if (banho) {
+        novoServico = 'Banho'
+        novosPontos = 10
       }
-    }
 
-    router.back()
+      if (tosa) {
+        novoServico = 'Tosa'
+        novosPontos = 15
+      }
+
+      const [todosServicos, todosClientes] = await Promise.all([
+        buscarServicos(),
+        buscarClientes()
+      ])
+
+      const clientesAtualizados = todosClientes.map((c: any) => {
+        if (c.id === servicoAtual.idCliente) {
+          const pontosAtuais = c.pontos || 0
+          const pontosAntigosDoServico = servicoAtual.pontos || 0
+          return {
+            ...c,
+            pontos: pontosAtuais - pontosAntigosDoServico + novosPontos
+          }
+        }
+        return c
+      })
+
+      const servicosAtualizados = todosServicos.map((s: any) => {
+        if (s.id === servicoAtual.id) {
+          return {
+            ...s,
+            servico: novoServico,
+            data: data.toISOString(),
+            pontos: novosPontos
+          }
+        }
+        return s
+      })
+
+      await Promise.all([
+        salvarServicos(servicosAtualizados),
+        salvarClientes(clientesAtualizados)
+      ])
+
+      router.back()
+    } catch (error) {
+      console.error("Erro ao atualizar o serviço:", error)
+      setMensagem("Ops! Não foi possível salvar as alterações.")
+      setMessageVisible(true)
+    }
+  }
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#015DAD" />
+      </View>
+    )
   }
 
   if (!servicoAtual || !pet || !cliente) {
     return (
       <View style={styles.container}>
-
         <MessageModal
           visible={true}
           mensagem='Ops! Não conseguimos localizar os dados deste serviço. Você será redirecionado para página home ;).'
           onClose={() => router.replace("/")}
         />
-
       </View>
     )
   }
 
   return (
-    <View style={{ flex: 1 }}>
-
+    <View style={{flex: 1}}>
       <View>
         <Header titulo='Editar Serviço' />
       </View>
 
       <View style={styles.container}>
+        <Text style={styles.labelSelect}>Selecione um Serviço*</Text>
+
+        <TouchableOpacity
+          style={styles.checkboxContainer}
+          onPress={() => {
+            setBanho(true)
+            setTosa(false)
+          }}
+        >
+          <Text style={styles.checkboxText}>{banho ? '(X)' : '( )'} Banho</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.checkboxContainer}
+          onPress={() => {
+            setTosa(true)
+            setBanho(false)
+          }}
+        >
+          <Text style={styles.checkboxText}>{tosa ? '(X)' : '( )'} Tosa</Text>
+        </TouchableOpacity>
 
         <DateInput
           placeholder='Data*'
           value={data}
           onChange={setData}
         />
-
-        <Text>Selecione um Serviço*</Text>
-
-        <TouchableOpacity
-          onPress={() => {
-            setBanho(true)
-            setTosa(false)
-          }}
-        >
-          <Text>{banho ? '[X]' : '[  ]'} Banho</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => {
-            setTosa(true)
-            setBanho(false)
-          }}
-        >
-          <Text>{tosa ? '[X]' : '[  ]'} Tosa</Text>
-        </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.button}
@@ -142,7 +186,6 @@ export default function EditarServico() {
             Salvar Alterações
           </Text>
         </TouchableOpacity>
-
       </View>
 
       <MessageModal
@@ -150,7 +193,6 @@ export default function EditarServico() {
         mensagem={mensagem}
         onClose={() => setMessageVisible(false)}
       />
-
     </View>
   )
 }
@@ -161,7 +203,21 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFF",
     padding: 20
   },
-
+  labelSelect: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 10
+  },
+  checkboxContainer: {
+    paddingVertical: 8,
+    paddingHorizontal: 2,
+    marginBottom: 5
+  },
+  checkboxText: {
+    fontSize: 16,
+    color: '#444'
+  },
   button: {
     backgroundColor: "#015DAD",
     padding: 12,
@@ -169,8 +225,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 10
   },
-
   buttonText: {
-    color: "#FFF"
+    color: "#FFF",
+    fontWeight: '600'
   }
 })

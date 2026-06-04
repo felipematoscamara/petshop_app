@@ -1,13 +1,15 @@
-import {StyleSheet, Text, View, TextInput, TouchableOpacity} from 'react-native'
+import { StyleSheet, Text, View, TextInput, TouchableOpacity } from 'react-native'
 import { useState } from 'react'
 import { useLocalSearchParams, router } from 'expo-router'
-import { pets, gerarPetId } from '../data/pets'
+import { gerarPetId } from '../data/pets'
 import Header from '../components/Header'
 import DateInput from '../components/DateInput'
 import MessageModal from '../components/MessageModal'
+import { buscarPets, salvarPets } from '../storage/petsStorage'
 
-export default function NovoPet(){
-  const {idCliente} = useLocalSearchParams()
+export default function NovoPet() {
+  const { idCliente } = useLocalSearchParams()
+
   const [nome, setNome] = useState('')
   const [especie, setEspecie] = useState('')
   const [raca, setRaca] = useState('')
@@ -17,10 +19,9 @@ export default function NovoPet(){
   const [modalVisible, setModalVisible] = useState(false)
   const [mensagemModal, setMensagemModal] = useState('')
 
-  function salvarPet(){
-
-    if(!idCliente || !nome || !especie){
-      setMensagemModal('Preencha os campos obrigátorios (*)')
+  async function salvarPet() {
+    if (!idCliente || !nome || !especie) {
+      setMensagemModal('Preencha os campos obrigatórios (*)')
       setModalVisible(true)
       return
     }
@@ -31,40 +32,40 @@ export default function NovoPet(){
       especie,
       raca,
       sexo,
-      nascimento: nascimento?.toISOString(),
-      idCliente: idCliente
+      nascimento: nascimento ? nascimento.toISOString() : null,
+      idCliente: String(idCliente)
     }
-    pets.push(novoPet)
+
+    const listaPets = await buscarPets()
+    listaPets.push(novoPet)
+    await salvarPets(listaPets)
 
     router.back()
   }
 
-
-  return(
-    <View style={{flex: 1}}>
-
+  return (
+    <View style={{ flex: 1 }}>
       <View>
-        <Header titulo='Novo Pet'/>
+        <Header titulo="Novo Pet" />
       </View>
 
       <View style={styles.container}>
-
         <TextInput
-          placeholder='Nome*'
+          placeholder="Nome*"
           style={styles.input}
           value={nome}
           onChangeText={setNome}
         />
 
         <TextInput
-          placeholder='Especie*'
+          placeholder="Espécie*"
           style={styles.input}
           value={especie}
           onChangeText={setEspecie}
         />
 
         <TextInput
-          placeholder='Raça'
+          placeholder="Raça"
           style={styles.input}
           value={raca}
           onChangeText={setRaca}
@@ -76,13 +77,12 @@ export default function NovoPet(){
           onChange={setNascimento}
         />
 
-        <TouchableOpacity 
-        style={styles.button}
-        onPress={salvarPet}
+        <TouchableOpacity
+          style={styles.button}
+          onPress={salvarPet}
         >
           <Text style={styles.buttonText}>Salvar</Text>
         </TouchableOpacity>
-        
       </View>
 
       <MessageModal
@@ -90,7 +90,6 @@ export default function NovoPet(){
         mensagem={mensagemModal}
         onClose={() => setModalVisible(false)}
       />
-        
     </View>
   )
 }
@@ -101,23 +100,20 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFF",
     flex: 1,
   },
-
-  input:{
+  input: {
     marginBottom: 10,
     borderWidth: 1,
     borderColor: "#CCC",
     padding: 10,
     borderRadius: 6
   },
-   
-    button:{
-      backgroundColor: "#015DAD",
-      borderRadius: 6,
-      padding: 12,
-      alignItems: "center",
-    },
-
-    buttonText:{
-      color: "#FFF"
-    }
+  button: {
+    backgroundColor: "#015DAD",
+    borderRadius: 6,
+    padding: 12,
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "#FFF"
+  }
 })

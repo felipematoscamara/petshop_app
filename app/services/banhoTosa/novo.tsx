@@ -1,16 +1,16 @@
-import { useLocalSearchParams } from 'expo-router'
-import {StyleSheet, TouchableOpacity, View, Text} from 'react-native'
-import { pets } from '@/app/data/pets'
+import { useLocalSearchParams, router } from 'expo-router'
+import { StyleSheet, TouchableOpacity, View, Text } from 'react-native'
 import { useState } from 'react'
-import { gerarServicoId, servicos } from '@/app/data/servicos'
-import { clientes } from '@/app/data/clientes'
-import { router } from 'expo-router'
+import { buscarPets } from '@/app/storage/petsStorage'
+import { buscarClientes, salvarClientes } from '@/app/storage/clientesStorage'
+import { buscarServicos, salvarServicos } from '@/app/storage/servicosStorage'
+import { gerarServicoId } from '@/app/data/servicos'
 import Header from '@/app/components/Header'
 import DateInput from '@/app/components/DateInput'
 import MessageModal from '@/app/components/MessageModal'
 
-export default function NovoServico(){
-  const {id} = useLocalSearchParams()
+export default function NovoServico() {
+  const { id } = useLocalSearchParams()
 
   const [messageVisible, setMessageVisible] = useState(false)
   const [mensagem, setMensagem] = useState('')
@@ -19,36 +19,49 @@ export default function NovoServico(){
   const [tosa, setTosa] = useState(false)
   const [data, setData] = useState<Date | null>(null)
 
-  function registrarServico() {
-    const pet = pets.find(p => p.id === id)
-    if (!pet) return
+  async function registrarServico() {
+    const pets = await buscarPets()
+    const pet = pets.find((p: any) => p.id === id)
 
-    const cliente = clientes.find(c => c.id === pet.idCliente)
-    
-    if (!cliente) return
-    
-    if (!data || (!banho && !tosa)) {
-      setMensagem('Preencha os campos obrigátorios (*)')
+    if (!pet) {
+      setMensagem('Ops! Não conseguimos localizar os dados deste pet. Você será redirecionado para a página inicial.')
       setMessageVisible(true)
       return
     }
 
-    if(banho) {
+    const clientes = await buscarClientes()
+    const cliente = clientes.find((c: any) => c.id === pet.idCliente)
+
+    if (!cliente) {
+      setMensagem('Ops! Não conseguimos localizar os dados deste cliente.')
+      setMessageVisible(true)
+      return
+    }
+
+    if (!data || (!banho && !tosa)) {
+      setMensagem('Preencha os campos obrigatórios (*)')
+      setMessageVisible(true)
+      return
+    }
+
+    const servicos = await buscarServicos()
+
+    if (banho) {
       const pontos = 10
 
       servicos.push({
         id: gerarServicoId(),
         servico: 'Banho',
-        data: data.toISOString(), 
+        data: data.toISOString(),
         pontos,
         idPet: pet.id,
         idCliente: cliente.id
       })
-      
+
       cliente.pontos = (cliente.pontos || 0) + pontos
     }
-    
-    if(tosa) {
+
+    if (tosa) {
       const pontos = 15
 
       servicos.push({
@@ -59,38 +72,29 @@ export default function NovoServico(){
         idPet: pet.id,
         idCliente: cliente.id
       })
-      
+
       cliente.pontos = (cliente.pontos || 0) + pontos
     }
 
-    if(!pet){
-      return(
-        <View style={styles.container}>
-    
-          <MessageModal
-            visible={true}
-            mensagem='Ops! Não conseguimos localizar os dados deste pet. Você será redirecionado para página home ;).'
-            onClose={() => router.replace("/")}
-          />
-    
-        </View>
-      )
-    }
+    const novaListaClientes = clientes.map((c: any) =>
+      c.id === cliente.id ? cliente : c
+    )
+
+    await salvarServicos(servicos)
+    await salvarClientes(novaListaClientes)
 
     router.back()
   }
 
-  return(
-    <View style={{flex: 1}}>
-
+  return (
+    <View style={{ flex: 1 }}>
       <View>
-        <Header titulo='Novo Serviço'/>
+        <Header titulo='Novo Serviço' />
       </View>
 
       <View style={styles.container}>
-
         <Text style={styles.label}>
-            Selecione um Serviço*
+          Selecione um Serviço*
         </Text>
 
         <TouchableOpacity
@@ -104,7 +108,7 @@ export default function NovoServico(){
 
         <TouchableOpacity
           onPress={() => setTosa(!tosa)}
-          style={[styles.opcao, {marginBottom: 10}]}
+          style={[styles.opcao, { marginBottom: 10 }]}
         >
           <Text>
             {tosa ? '(X)' : '( )'} Tosa
@@ -118,12 +122,11 @@ export default function NovoServico(){
         />
 
         <TouchableOpacity
-          style={styles.button} 
+          style={styles.button}
           onPress={registrarServico}
         >
           <Text style={styles.buttonText}>Registrar</Text>
         </TouchableOpacity>
-        
       </View>
 
       <MessageModal
@@ -131,7 +134,6 @@ export default function NovoServico(){
         mensagem={mensagem}
         onClose={() => setMessageVisible(false)}
       />
-
     </View>
   )
 }
@@ -154,12 +156,12 @@ const styles = StyleSheet.create({
     color: "#FFF"
   },
 
-  label: { 
+  label: {
     marginBottom: 10,
     fontWeight: "600"
   },
 
   opcao: {
     paddingVertical: 8
-  } 
+  }
 })

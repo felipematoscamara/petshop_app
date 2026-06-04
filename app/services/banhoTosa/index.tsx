@@ -1,11 +1,13 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router'
-import { StyleSheet, View, TouchableOpacity, Text, FlatList } from 'react-native'
-import { pets } from '@/app/data/pets'
+import { StyleSheet, View, TouchableOpacity, Text, FlatList, ActivityIndicator } from 'react-native'
 import { useCallback, useState } from 'react'
-import { servicos } from '@/app/data/servicos'
 import Header from '@/app/components/Header'
 import MessageModal from '@/app/components/MessageModal'
 import MenuModal from '@/app/components/MenuModal'
+
+// 1. IMPORTAR OS STORAGES (Ajuste os caminhos @/ se necessário)
+import { buscarPets } from '@/app/storage/petsStorage'
+import { buscarServicos, salvarServicos } from '@/app/storage/servicosStorage'
 
 type Servico = {
   id: string
@@ -17,36 +19,65 @@ type Servico = {
 
 export default function BanhoTosa() {
   const { id } = useLocalSearchParams()
-  const pet = pets.find(p => p.id === id)
 
-  const [listaServicos, setListaServicos] = useState(servicos)
+  const [pet, setPet] = useState<any>(null)
+  const [listaServicos, setListaServicos] = useState<Servico[]>([])
+  const [loading, setLoading] = useState(true)
+
   const [menuVisible, setMenuVisible] = useState(false)
   const [servicoSelecionado, setServicoSelecionado] = useState<Servico | null>(null)
 
-  const excluirServico = () => {
+  const excluirServico = async () => {
     if (!servicoSelecionado) return
 
-    const novaLista = listaServicos.filter(
-      s => s.id !== servicoSelecionado.id
+    const todosServicos = await buscarServicos()
+   
+    const novaListaGeral = todosServicos.filter(
+      (s: Servico) => s.id !== servicoSelecionado.id
     )
 
-    servicos.length = 0
-    servicos.push(...novaLista)
+    await salvarServicos(novaListaGeral)
 
-    setListaServicos(novaLista)
+    setListaServicos(novaListaGeral)
     setMenuVisible(false)
     setServicoSelecionado(null)
   }
 
   useFocusEffect(
     useCallback(() => {
-      setListaServicos([...servicos])
+      async function carregarDadosServicos() {
+        setLoading(true)
+        try {
+          const [allPets, allServicos] = await Promise.all([
+            buscarPets(),
+            buscarServicos()
+          ])
+
+          const petEncontrado = allPets.find((p: any) => p.id === id)
+          setPet(petEncontrado || null)
+          setListaServicos(allServicos)
+        } catch (error) {
+          console.error("Erro ao carregar serviços:", error)
+        } finally {
+          setLoading(false)
+        }
+      }
+
+      carregarDadosServicos()
     }, [id])
   )
 
   const servicosDoPet = listaServicos.filter(
     v => v.idPet === id
   )
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#015DAD" />
+      </View>
+    )
+  }
 
   if (!pet) {
     return (
@@ -63,7 +94,7 @@ export default function BanhoTosa() {
   return (
     <View style={{ flex: 1 }}>
       <View>
-        <Header titulo='Serviços' />
+        <Header titulo={`Serviços: ${pet.nome}`} />
       </View>
 
       <View style={styles.container}>
@@ -86,9 +117,9 @@ export default function BanhoTosa() {
               <Text>Pontos: {item.pontos}</Text>
             </TouchableOpacity>
           )}
-          contentContainerStyle={{ paddingBottom: 50 }}
+          contentContainerStyle={{ paddingBottom: 80 }}
           ListEmptyComponent={
-            <Text>Nenhum serviço cadastrado</Text>
+            <Text style={styles.vazioTexto}>Nenhum serviço cadastrado para este pet</Text>
           }
         />
 
@@ -112,6 +143,7 @@ export default function BanhoTosa() {
             label: "Editar Serviço",
             onPress: () => {
               if (!servicoSelecionado) return
+              setMenuVisible(false)
               router.push(`/services/banhoTosa/editar?id=${servicoSelecionado.id}`)
             }
           },
@@ -134,7 +166,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFF",
     padding: 20
   },
-
   button: {
     position: "absolute",
     backgroundColor: "#015DAD",
@@ -145,27 +176,33 @@ const styles = StyleSheet.create({
     left: 20,
     right: 20
   },
-
   buttonText: {
     color: "#FFF",
+    fontWeight: "600"
   },
-
   cardServico: {
     marginBottom: 12,
     padding: 12,
     borderRadius: 8,
-    backgroundColor: "#F5F5F5"
+    backgroundColor: "#F5F5F5",
+    borderWidth: 1,
+    borderColor: "#E0E0E0"
   },
-
   linhaTopo: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 4
   },
-
   nomeServico: {
     fontSize: 16,
-    fontWeight: "600"
+    fontWeight: "600",
+    color: "#333"
+  },
+  vazioTexto: {
+    textAlign: "center",
+    color: "#7F8C8D",
+    marginTop: 20,
+    fontStyle: "italic"
   }
 })

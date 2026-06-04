@@ -1,108 +1,107 @@
-import { View, StyleSheet, TextInput, TouchableOpacity, Text} from 'react-native'
+import { View, StyleSheet, TextInput, TouchableOpacity, Text } from 'react-native'
 import { useState } from 'react'
-import { clientes } from '../data/clientes'
-import { gerarId } from '../data/clientes'
 import { router } from 'expo-router'
 import Header from '../components/Header'
 import MessageModal from '../components/MessageModal'
+import { gerarId } from '../data/clientes'
+import { buscarClientes, salvarClientes } from '../storage/clientesStorage'
 
-export default function NovoCliente(){
-    const [nome, setNome] = useState('')
-    const [telefone, setTelefone] = useState('')
-    const [endereco, setEndereco] = useState('')
-    const [modalVisible, setModalvisible] = useState(false)
+export default function NovoCliente() {
+  const [nome, setNome] = useState('')
+  const [telefone, setTelefone] = useState('')
+  const [endereco, setEndereco] = useState('')
+  const [modalVisible, setModalvisible] = useState(false)
 
-    return(
-        
-        <View style={{flex: 1}}>
+  async function salvarCliente() {
+    if (!nome) {
+      setModalvisible(true)
+      return
+    }
 
-            <View>
-                <Header titulo='Novo Cliente'/>
-            </View>
+    const novoCliente = {
+      id: gerarId(),
+      nome,
+      telefone,
+      endereco,
+      pontos: 0
+    }
 
-            <View style={styles.container}>
+    const listaClientes = await buscarClientes()
+    listaClientes.push(novoCliente)
+    await salvarClientes(listaClientes)
 
-                <TextInput
-                    placeholder='Nome*'
-                    style={styles.input}
-                    value={nome}
-                    onChangeText={setNome}
-                    />
+    router.back()
+  }
 
-                <TextInput
-                    placeholder='Telefone'
-                    style={styles.input}
-                    value={telefone}
-                    onChangeText={setTelefone}
-                    keyboardType="phone-pad"
-                    />
+  return (
+    <View style={{ flex: 1 }}>
+      <View>
+        <Header titulo='Novo Cliente' />
+      </View>
 
-                <TextInput
-                    placeholder='Endereço'
-                    style={styles.input}
-                    value={endereco}
-                    onChangeText={setEndereco}
-                    />
+      <View style={styles.container}>
+        <TextInput
+          placeholder='Nome*'
+          style={styles.input}
+          value={nome}
+          onChangeText={setNome}
+        />
 
-                <TouchableOpacity 
-                    style={styles.button}
-                    onPress={() => {
+        <TextInput
+          placeholder='Telefone'
+          style={styles.input}
+          value={telefone}
+          onChangeText={setTelefone}
+          keyboardType="phone-pad"
+        />
 
-                        if(!nome){
-                            setModalvisible(true)
-                            return
-                        }
+        <TextInput
+          placeholder='Endereço'
+          style={styles.input}
+          value={endereco}
+          onChangeText={setEndereco}
+        />
 
-                        const novoCliente={
-                            id: gerarId(),
-                            nome,
-                            telefone,
-                            endereco,
-                            pontos: 0
-                        }
+        <TouchableOpacity
+          style={styles.button}
+          onPress={salvarCliente}
+        >
+          <Text style={styles.buttonText}>Salvar</Text>
+        </TouchableOpacity>
+      </View>
 
-                        clientes.push(novoCliente)
-                        router.back()
-                    }}
-                    >
-                    <Text style={styles.buttonText}>Salvar</Text>
-                </TouchableOpacity>
-
-            </View>
-
-            <MessageModal
-                visible={modalVisible}
-                mensagem='Preencha os campos obrigátorios (*)'
-                onClose={() => setModalvisible(false)}
-            />
-            
-        </View>
-    )
+      <MessageModal
+        visible={modalVisible}
+        mensagem='Preencha os campos obrigatórios (*)'
+        onClose={() => setModalvisible(false)}
+      />
+    </View>
+  )
 }
 
 const styles = StyleSheet.create({
-    container:{
-        flex: 1,
-        backgroundColor: "#FFF",
-        padding: 20
-    },
+  container: {
+    flex: 1,
+    backgroundColor: "#FFF",
+    padding: 20
+  },
 
-    input:{
-        marginBottom: 10,
-        borderWidth: 1,
-        borderColor: "#CCC",
-        padding: 10,
-        borderRadius: 6
-    },
+  input: {
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "#CCC",
+    padding: 10,
+    borderRadius: 6
+  },
 
-    button:{
-        backgroundColor: "#015DAD",
-        padding: 12,
-        borderRadius: 6,
-        alignItems: "center"
-    },
+  button: {
+    backgroundColor: "#015DAD",
+    padding: 12,
+    borderRadius: 6,
+    alignItems: "center"
+  },
 
-    buttonText:{
-        color: "#FFF"
-    }    
-}) 
+  buttonText: {
+    color: "#FFF"
+  }
+})

@@ -1,11 +1,11 @@
 import { TextInput, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { router, useFocusEffect } from 'expo-router'
-import { clientes } from './data/clientes'
 import { useCallback, useState } from 'react'
-import { pets } from './data/pets'
-import { vacinas } from './data/vacinas'
 import { verificarStatusVacina } from './utils/verificarStatusVacina'
 import HeaderHome from './components/HeaderHome'
+import { buscarClientes } from './storage/clientesStorage' 
+import { buscarPets } from './storage/petsStorage'
+import { buscarVacinas } from '../app/storage/vacinasStrorage'
 
 type StatusPet = "atrasada" | "proxima" | "em-dia" | "sem-vacina"
 
@@ -21,13 +21,13 @@ type Vacina = {
 
 export default function ClientesPage() {
   const [busca, setBusca] = useState('')
-  const [listaClientes, setListaClientes] = useState(clientes)
-  
+ 
+  const [listaClientes, setListaClientes] = useState<any[]>([]) 
   const [petsPorCliente, setPetsPorCliente] = useState<Record<string, number>>({})
   const [clientesComAlerta, setClientesComAlerta] = useState<Record<string, boolean>>({})
 
-  function obterUltimaVacinaDoTipo(idPet: string, idVacina: string) {
-    const vacinasDoPet = vacinas.filter(
+  function obterUltimaVacinaDoTipo(idPet: string, idVacina: string, vacinasAtuais: Vacina[]) {
+    const vacinasDoPet = vacinasAtuais.filter(
       (v: Vacina) => v.idPet === idPet && v.idVacina === idVacina
     )
     if (vacinasDoPet.length === 0) return null
@@ -39,10 +39,13 @@ export default function ClientesPage() {
     })
   }
 
-  function obterStatusPet(idPet: string): StatusPet {
-    const ultimaV11 = obterUltimaVacinaDoTipo(idPet, "v11")
-    const ultimaAntirrabica = obterUltimaVacinaDoTipo(idPet, "antirrabica")
-    const ultimasVacinas = [ultimaV11, ultimaAntirrabica].filter(Boolean) as Vacina[]
+  function obterStatusPet(idPet: string, vacinasAtuais: Vacina[]): StatusPet {
+    const ultimaV11 = obterUltimaVacinaDoTipo(idPet, "v11", vacinasAtuais)
+    const ultimaAntirrabica = obterUltimaVacinaDoTipo(idPet, "antirrabica", vacinasAtuais)
+    const ultimaVanguard = obterUltimaVacinaDoTipo(idPet, "vanguard", vacinasAtuais)
+    const ultimaAnticio = obterUltimaVacinaDoTipo(idPet, "anticio", vacinasAtuais)
+    
+    const ultimasVacinas = [ultimaV11, ultimaAntirrabica, ultimaVanguard, ultimaAnticio].filter(Boolean) as Vacina[]
 
     if (ultimasVacinas.length === 0) return "sem-vacina"
 
@@ -61,24 +64,34 @@ export default function ClientesPage() {
 
   useFocusEffect(
     useCallback(() => {
-      setListaClientes([...clientes])
+      async function carregarDadosDoStorage() {
+        const [clientesDoBanco, petsDoBanco, vacinasDoBanco] = await Promise.all([
+          buscarClientes(),
+          buscarPets(),
+          buscarVacinas()
+        ]) as [any[], any[], any[]]
 
-      const totalPets = pets.reduce<Record<string, number>>((acc, pet) => {
-        acc[pet.idCliente] = (acc[pet.idCliente] || 0) + 1
-        return acc
-      }, {})
-      setPetsPorCliente(totalPets)
+        setListaClientes(clientesDoBanco)
+        
+        const totalPets = petsDoBanco.reduce<Record<string, number>>((acc, pet: any) => {
+          acc[pet.idCliente] = (acc[pet.idCliente] || 0) + 1
+          return acc
+        }, {})
+        setPetsPorCliente(totalPets)
 
-      const alertas: Record<string, boolean> = {}
-      clientes.forEach(cliente => {
-        const petsDoCliente = pets.filter(pet => pet.idCliente === cliente.id)
-        const temAlerta = petsDoCliente.some(pet => {
-          const status = obterStatusPet(pet.id)
-          return status === "atrasada" || status === "proxima"
+        const alertas: Record<string, boolean> = {}
+        clientesDoBanco.forEach((cliente: any) => {
+          const petsDoCliente = petsDoBanco.filter((pet: any) => pet.idCliente === cliente.id)
+          const temAlerta = petsDoCliente.some((pet: any) => {
+            const status = obterStatusPet(pet.id, vacinasDoBanco)
+            return status === "atrasada" || status === "proxima"
+          })
+          alertas[cliente.id] = temAlerta
         })
-        alertas[cliente.id] = temAlerta
-      })
-      setClientesComAlerta(alertas)
+        setClientesComAlerta(alertas)
+      }
+
+      carregarDadosDoStorage()
     }, [])
   )
 
