@@ -9,26 +9,31 @@ type Props = {
     style?: any
 }
 
-export default function DateInput({ value, onChange, placeholder}: Props){
-    
+export default function DateInput({
+    value,
+    onChange,
+    placeholder,
+    style
+}: Props){
+
     const [mostrarPicker, setMostrarPicker] = useState(false)
 
     return(
-        <View style={{marginBottom: 10}}>
-            
+        <View>
             <TouchableOpacity
-                style={styles.input}
+                style={[styles.input, style]}
                 onPress={() => setMostrarPicker(true)}
             >
                 <Text
                     style={{
-                        color: value ? "#000" : "#757575"
+                        color: value ? "#1E293B" : "#64748B",
+                        fontSize: 15
                     }}
                 >
                     {value
-                    ? value.toLocaleDateString('pt-BR')
-                    : placeholder
-                }
+                        ? value.toLocaleDateString('pt-BR')
+                        : placeholder
+                    }
                 </Text>
             </TouchableOpacity>
 
@@ -38,7 +43,7 @@ export default function DateInput({ value, onChange, placeholder}: Props){
                     mode="date"
                     display="default"
                     onChange={(event, selectDate) => {
-                        
+
                         if(event.type === "dismissed"){
                             setMostrarPicker(false)
                             return
@@ -49,20 +54,18 @@ export default function DateInput({ value, onChange, placeholder}: Props){
                         }
 
                         setMostrarPicker(false)
-
                     }}
                 />
             )}
-
         </View>
     )
 }
 
 const styles = StyleSheet.create({
-  input:{
-    borderWidth: 1,
-    borderColor: "#CCC",
-    padding: 10,
-    borderRadius: 6
-  }
+    input:{
+        borderWidth: 1,
+        borderColor: "#CCC",
+        padding: 10,
+        borderRadius: 6
+    }
 })

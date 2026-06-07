@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useFocusEffect } from "expo-router"
-import { StyleSheet, Text, View, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native'
+import { StyleSheet, Text, View, TouchableOpacity, FlatList, ActivityIndicator, Platform } from 'react-native'
 import { router } from "expo-router"
 import { useCallback, useState } from "react"
 import Header from "../components/Header"
@@ -9,12 +9,16 @@ import { verificarStatusVacina } from "../utils/verificarStatusVacina"
 import { buscarClientes, salvarClientes } from "../storage/clientesStorage"
 import { buscarPets } from "../storage/petsStorage"
 import { buscarVacinas } from "../storage/vacinasStrorage"
-import { buscarServicos } from "../storage/servicosStorage"
+import { buscarServicos, salvarServicos } from "../storage/servicosStorage"
+
+type StatusTipo = "atrasada" | "proxima" | "em-dia" | "sem-vacina";
 
 export default function Cliente() {
     const { id } = useLocalSearchParams()
 
     const [menuVisible, setMenuVisible] = useState(false)
+    const [confirmModalVisible, setConfirmModalVisible] = useState(false)
+    const [resgateModalVisible, setResgateModalVisible] = useState(false) 
     const [loading, setLoading] = useState(true) 
     
     const [clienteAtual, setClienteAtual] = useState<any>(null)
@@ -27,7 +31,6 @@ export default function Cliente() {
             async function carregarDadosDoCliente() {
                 setLoading(true)
                 try {
-                   
                     const [allClientes, allPets, allVacinas, allServicos] = await Promise.all([
                         buscarClientes(),
                         buscarPets(),
@@ -70,15 +73,15 @@ export default function Cliente() {
 
     if (loading) {
         return (
-            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-                <ActivityIndicator size="large" color="#015DAD" />
+            <View style={[styles.mainContainer, { justifyContent: 'center', alignItems: 'center' }]}>
+                <ActivityIndicator size="large" color={Colors.primary} />
             </View>
         )
     }
 
     if (!clienteAtual) {
         return (
-            <View style={styles.container}>
+            <View style={styles.mainContainer}>
                 <MessageModal
                     visible={true}
                     mensagem="Ops! Não conseguimos localizar os dados deste cliente. Você será redirecionado para página home ;)."
@@ -87,7 +90,7 @@ export default function Cliente() {
             </View>
         )
     }
-
+    
     function abrirMenu() {
         setMenuVisible(true)
     }
@@ -97,35 +100,42 @@ export default function Cliente() {
         const novaLista = allClientes.filter((c: any) => c.id !== id)
         
         await salvarClientes(novaLista)
-        setMenuVisible(false)
+        setConfirmModalVisible(false) 
         router.back()
     }
 
-    function obterUltimaVacinaDoTipo(idPet: string, idVacina: string) {
-        const vacinasDoPet = listaVacinas.filter(
-            v => v.idPet === idPet && v.idVacina === idVacina
-        )
+    async function limparPontosCliente() {
+        try {
+            const novosServicos = listaServicos.map((servico) => {
+                if (idsPetsDoCliente.includes(servico.idPet)) {
+                    return { ...servico, pontos: 0 } 
+                }
+                return servico
+            })
 
-        if (vacinasDoPet.length === 0) return null
-
-        return vacinasDoPet.reduce((maisRecente, atual) => {
-            return new Date(atual.data).getTime() > new Date(maisRecente.data).getTime()
-                ? atual
-                : maisRecente
-        })
+            await salvarServicos(novosServicos)
+            setListaServicos(novosServicos) 
+            setResgateModalVisible(false)
+        } catch (error) {
+            console.error("Erro ao resgatar pontos:", error)
+        }
     }
 
-    function obterStatusPet(idPet: string):
-        "atrasada" | "proxima" | "em-dia" | "sem-vacina" {
+    function obtenerStatusPet(idPet: string): StatusTipo {
+        const vacinasDoPet = listaVacinas.filter(v => v.idPet === idPet)
 
-        const ultimaV11 = obterUltimaVacinaDoTipo(idPet, "v11")
-        const ultimaAntirrabica = obterUltimaVacinaDoTipo(idPet, "antirrabica")
-        const ultimaVanguard = obterUltimaVacinaDoTipo(idPet, "vanguard")
-        const ultimaAnticio = obterUltimaVacinaDoTipo(idPet, "anticio")
+        if (vacinasDoPet.length === 0) return "sem-vacina"
 
-        const ultimasVacinas = [ultimaV11, ultimaAntirrabica, ultimaVanguard, ultimaAnticio].filter(Boolean)
+        const ultimasVacinasMap: Record<string, any> = {}
+        
+        vacinasDoPet.forEach(vacina => {
+            const vacinaExistente = ultimasVacinasMap[vacina.idVacina]
+            if (!vacinaExistente || new Date(vacina.data).getTime() > new Date(vacinaExistente.data).getTime()) {
+                ultimasVacinasMap[vacina.idVacina] = vacina
+            }
+        })
 
-        if (ultimasVacinas.length === 0) return "sem-vacina"
+        const ultimasVacinas = Object.values(ultimasVacinasMap)
 
         const possuiAtrasada = ultimasVacinas.some(
             v => verificarStatusVacina(v!.proxima) === "atrasada"
@@ -140,8 +150,22 @@ export default function Cliente() {
         return "em-dia"
     }
 
+    function obterEstiloStatus(status: StatusTipo) {
+        switch (status) {
+            case "atrasada":
+                return { texto: "Atrasada", cor: Colors.danger, bg: Colors.dangerLight }
+            case "proxima":
+                return { texto: "Próxima", cor: Colors.warning, bg: Colors.warningLight }
+            case "em-dia":
+                return { texto: "Em Dia", cor: Colors.success, bg: Colors.successLight }
+            default:
+                return { texto: "Sem Vacinas", cor: Colors.textSecundario, bg: Colors.bgSecundario }
+        }
+    }
+
     return (
-        <View style={{ flex: 1 }}>
+        <View style={styles.mainContainer}>
+
             <MenuModal
                 visible={menuVisible}
                 onClose={() => setMenuVisible(false)}
@@ -155,72 +179,136 @@ export default function Cliente() {
                         }
                     },
                     {
+                        label: `Resgatar Pontos (${totalPontos} pts)`,
+                        onPress: () => {
+                            setMenuVisible(false)
+                            setResgateModalVisible(true)
+                        }
+                    },
+                    {
                         label: "Excluir Cliente",
                         isDanger: true,
                         onPress: () => {
-                            excluirCliente()
+                            setMenuVisible(false)
+                            setConfirmModalVisible(true)
                         }
                     }
                 ]}
             />
 
-            <View>
-                <Header 
-                    titulo="Cliente"
-                    onMenuPress={abrirMenu}
-                />
-            </View>
+            <MenuModal
+                visible={resgateModalVisible}
+                onClose={() => setResgateModalVisible(false)}
+                title={totalPontos > 0 ? `Resgatar ${totalPontos} pontos?` : "Sem pontos disponíveis"}
+                options={
+                    totalPontos > 0 ? [
+                        {
+                            label: "Confirmar Resgate (Zerar)",
+                            onPress: () => limparPontosCliente()
+                        }
+                    ] : [
+                        {
+                            label: "Voltar",
+                            onPress: () => setResgateModalVisible(false)
+                        }
+                    ]
+                }
+            />
 
-            <View style={styles.container}>
+            <MenuModal
+                visible={confirmModalVisible}
+                onClose={() => setConfirmModalVisible(false)}
+                title={`Excluir ${clienteAtual.nome}?`}
+                options={[
+                    {
+                        label: "Confirmar Exclusão",
+                        isDanger: true,
+                        onPress: () => excluirCliente()
+                    }
+                ]}
+            />
+
+            <Header 
+                titulo="Cliente"
+                onMenuPress={abrirMenu}
+            />
+
+            <View style={styles.content}>
                 <FlatList
                     data={listaPets}
                     keyExtractor={(item) => item.id}
+                    showsVerticalScrollIndicator={false}
                     ListHeaderComponent={
-                        <View style={{ marginBottom: 10 }}>
-                            <Text style={styles.clienteNome}>{clienteAtual.nome} ⭐{totalPontos}</Text>
-                            <Text style={styles.clienteInfo}>
-                                {clienteAtual.telefone ? `📞 Telefone: ${clienteAtual.telefone}` : '📞 Telefone: Não informado'}
-                            </Text>                                 
-                            <Text style={styles.clienteInfo}>
-                                {clienteAtual.endereco ? `📍 Endereço: ${clienteAtual.endereco}` : '📍 Endereço: Não informado'}
-                            </Text>
-                            <Text style={styles.tituloSecao}>Pets cadastrados:</Text>
+                        <View>
+                            <View style={styles.profileCard}>
+                                <View style={styles.profileHeaderRow}>
+                                    <Text style={styles.clienteNome} numberOfLines={2}>
+                                        {clienteAtual.nome}
+                                    </Text>
+                                    
+                                    {/* Voltou a ser apenas View fixa (sem clique involuntário) */}
+                                    <View style={styles.pointsBadge}>
+                                        <Text style={styles.pointsText}>⭐ {totalPontos} pts</Text>
+                                    </View>
+                                </View>
+
+                                <View style={styles.divider} />
+
+                                <View style={styles.infoRow}>
+                                    <Text style={styles.infoLabel}>TELEFONE</Text>
+                                    <Text style={styles.infoValue}>{clienteAtual.telefone || 'Não informado'}</Text>
+                                </View>
+
+                                <View style={styles.infoRow}>
+                                    <Text style={styles.infoLabel}>ENDEREÇO</Text>
+                                    <Text style={styles.infoValue} numberOfLines={2}>{clienteAtual.endereco || 'Não informado'}</Text>
+                                </View>
+                            </View>
+
+                            <Text style={styles.tituloSecao}>Pets Vinculados</Text>
                         </View>
                     }
                     ListEmptyComponent={
-                        <Text style={styles.vazioTexto}>Nenhum pet cadastrado para este cliente.</Text>
+                        <View style={styles.emptyStateContainer}>
+                            <Text style={styles.vazioTexto}>Nenhum pet cadastrado para este cliente.</Text>
+                        </View>
                     }
                     renderItem={({ item }) => {
-                        const status = obterStatusPet(item.id)
+                        const status = obtenerStatusPet(item.id)
+                        const configStatus = obterEstiloStatus(status)
 
                         return (
                             <TouchableOpacity
                                 onPress={() => router.push(`/pets/${item.id}`)}
+                                activeOpacity={0.7}
+                                style={styles.petCard}
                             >
-                                <View
-                                    style={[
-                                        styles.petCard,
-                                        status === "atrasada" && styles.petCardAtrasado,
-                                        status === "proxima" && styles.petCardProximo
-                                    ]}
-                                >
-                                    <Text style={styles.petNome}>🐾 {item.nome}</Text>
-                                    {status === "atrasada" && <Text style={styles.statusAtrasado}>❌ Vacina atrasada</Text>}
-                                    {status === "proxima" && <Text style={styles.statusProximo}>⚠️ Vacina próxima do vencimento</Text>}
-                                    {status === "em-dia" && <Text style={styles.statusEmDia}>✅ Vacina em dia</Text>}
-                                    {status === "sem-vacina" && <Text style={styles.statusSemVacina}>⚪ Nenhuma vacina cadastrada</Text>}
+                                <View style={styles.petCardContent}>
+                                    <View style={styles.petInfoLeft}>
+                                        <Text style={styles.petEmoji}>🐾</Text>
+                                        <Text style={styles.petNome}>{item.nome}</Text>
+                                    </View>
+                                    
+                                    <View style={[styles.statusBadge, { backgroundColor: configStatus.bg }]}>
+                                        <Text style={[styles.statusText, { color: configStatus.cor }]}>
+                                            {configStatus.texto}
+                                        </Text>
+                                    </View>
                                 </View>
                             </TouchableOpacity>
                         )
                     }}
                     ListFooterComponent={
-                        <Text style={styles.idTexto}>ID Cliente: {clienteAtual.id}</Text>
+                        <Text style={styles.idTexto}>ID: {clienteAtual.id}</Text>
                     }
-                    contentContainerStyle={{ paddingBottom: 80 }}
+                    contentContainerStyle={{ paddingBottom: 130 }} 
                 />
+            </View>
 
+            <View style={styles.footer}>
                 <TouchableOpacity
                     style={styles.button}
+                    activeOpacity={0.85}
                     onPress={() => router.push(`/pets/novo?idCliente=${id}`)}
                 >
                     <Text style={styles.buttonText}>Novo Pet</Text>
@@ -230,73 +318,185 @@ export default function Cliente() {
     )
 }
 
+const Colors = {
+    bg: '#FFFFFF',
+    bgSecundario: '#F8FAFC', 
+    textPrincipal: '#1E293B', 
+    textSecundario: '#64748B', 
+    primary: '#007BFF', 
+    border: '#E2E8F0', 
+    danger: '#EF4444',
+    dangerLight: '#FEE2E2',
+    warning: '#F59E0B',
+    warningLight: '#FEF3C7',
+    success: '#10B981',
+    successLight: '#D1FAE5',
+};
+
 const styles = StyleSheet.create({
-    container: {
+    mainContainer: {
         flex: 1,
-        backgroundColor: '#FFF',
-        padding: 20
+        backgroundColor: Colors.bgSecundario,
+    },
+    content: {
+        flex: 1,
+        paddingHorizontal: 16,
+    },
+    profileCard: {
+        backgroundColor: Colors.bg,
+        borderRadius: 16,
+        padding: 18,
+        marginTop: 16,
+        marginBottom: 8,
+        borderWidth: 1,
+        borderColor: Colors.border,
+        shadowColor: "#0F172A",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.03,
+        shadowRadius: 10,
+        elevation: 1,
+    },
+    profileHeaderRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center', // Alinhado ao centro para bater com o badge clicável
     },
     clienteNome: {
-        fontSize: 22,
-        fontWeight: "bold",
-        color: "#333",
-        marginBottom: 8
+        fontSize: 20,
+        fontWeight: "700",
+        color: Colors.textPrincipal,
+        flex: 1,
+        marginRight: 10,
     },
-    clienteInfo: {
-        fontSize: 14,
-        color: "#555",
-        marginBottom: 4
+    pointsBadge: {
+        backgroundColor: '#EFF6FF', 
+        paddingHorizontal: 12,
+        paddingVertical: 8, // Um pouquinho mais de padding para área de clique confortável
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: '#DBEAFE',
+    },
+    pointsText: {
+        fontSize: 13,
+        fontWeight: '700',
+        color: Colors.primary,
+    },
+    divider: {
+        height: 1,
+        backgroundColor: Colors.border,
+        marginVertical: 14,
+    },
+    infoRow: {
+        marginBottom: 12,
+    },
+    infoLabel: {
+        fontSize: 10,
+        fontWeight: '700',
+        color: Colors.textSecundario,
+        letterSpacing: 0.5,
+        marginBottom: 2,
+    },
+    infoValue: {
+        fontSize: 15,
+        color: Colors.textPrincipal,
+        fontWeight: '500',
     },
     tituloSecao: {
-        fontSize: 16,
-        fontWeight: "600",
+        fontSize: 13,
+        fontWeight: "700",
+        textTransform: "uppercase",
+        letterSpacing: 0.8,
         marginTop: 20,
-        marginBottom: 5,
-        color: "#015DAD"
-    },
-    vazioTexto: {
-        color: "#7F8C8D",
-        fontStyle: "italic",
-        marginVertical: 10
-    },
-    button: {
-        position: "absolute",
-        bottom: 20,
-        left: 20,
-        right: 20,
-        backgroundColor: "#015DAD",
-        padding: 12,
-        borderRadius: 6,
-        alignItems: "center"
-    },
-    buttonText: {
-        color: "#FFF",
-        fontWeight: "600"
+        marginBottom: 10,
+        color: Colors.textSecundario,
+        paddingLeft: 4,
     },
     petCard: {
-        marginVertical: 6,
-        padding: 14,
-        borderRadius: 8,
+        backgroundColor: Colors.bg,
+        marginVertical: 5,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        borderRadius: 12,
         borderWidth: 1,
-        borderColor: "#DDD",
-        backgroundColor: "#F9F9F9"
+        borderColor: Colors.border,
     },
-    petCardAtrasado: {
-        borderColor: "#C0392B",
-        backgroundColor: "#FDEDEC"
+    petCardContent: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
     },
-    petCardProximo: {
-        borderColor: "#D68910",
-        backgroundColor: "#FEF5E7"
+    petInfoLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+    },
+    petEmoji: {
+        fontSize: 18,
+        marginRight: 10,
     },
     petNome: {
         fontSize: 16,
         fontWeight: "600",
-        color: "#333"
+        color: Colors.textPrincipal,
     },
-    statusAtrasado: { marginTop: 6, color: "#C0392B", fontWeight: "600" },
-    statusProximo: { marginTop: 6, color: "#D68910", fontWeight: "600" },
-    statusEmDia: { marginTop: 6, color: "#1E8449", fontWeight: "600" },
-    statusSemVacina: { marginTop: 6, color: "#7F8C8D", fontWeight: "600" },
-    idTexto: { marginTop: 20, color: '#999', fontSize: 11 }
+    statusBadge: {
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 8,
+    },
+    statusText: {
+        fontSize: 12,
+        fontWeight: "700",
+    },
+    emptyStateContainer: {
+        backgroundColor: Colors.bg,
+        borderRadius: 12,
+        padding: 24,
+        alignItems: 'center',
+        marginTop: 8,
+        borderWidth: 1,
+        borderColor: Colors.border,
+    },
+    vazioTexto: {
+        color: Colors.textSecundario,
+        fontSize: 14,
+        textAlign: 'center',
+    },
+    idTexto: { 
+        textAlign: 'center',
+        marginTop: 24, 
+        color: Colors.textSecundario, 
+        fontSize: 11,
+        letterSpacing: 0.5
+    },
+    footer: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: Colors.bg,
+        paddingHorizontal: 16,
+        paddingBottom: Platform.OS === 'ios' ? 34 : 20,
+        paddingTop: 12,
+        borderTopWidth: 1,
+        borderTopColor: Colors.border,
+    },
+    button: {
+        backgroundColor: Colors.primary,
+        paddingVertical: 16,
+        borderRadius: 14,
+        alignItems: "center",
+        justifyContent: "center",
+        shadowColor: Colors.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 3,
+    },
+    buttonText: {
+        color: "#FFF",
+        fontWeight: "700",
+        fontSize: 16,
+        letterSpacing: 0.3
+    }
 })
