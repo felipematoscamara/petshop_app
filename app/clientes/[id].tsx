@@ -206,12 +206,7 @@ export default function Cliente() {
                             label: "Confirmar Resgate (Zerar)",
                             onPress: () => limparPontosCliente()
                         }
-                    ] : [
-                        {
-                            label: "Voltar",
-                            onPress: () => setResgateModalVisible(false)
-                        }
-                    ]
+                    ] : []
                 }
             />
 
@@ -246,7 +241,6 @@ export default function Cliente() {
                                         {clienteAtual.nome}
                                     </Text>
                                     
-                                    {/* Voltou a ser apenas View fixa (sem clique involuntário) */}
                                     <View style={styles.pointsBadge}>
                                         <Text style={styles.pointsText}>⭐ {totalPontos} pts</Text>
                                     </View>
@@ -359,7 +353,7 @@ const styles = StyleSheet.create({
     profileHeaderRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center', // Alinhado ao centro para bater com o badge clicável
+        alignItems: 'center', 
     },
     clienteNome: {
         fontSize: 20,
@@ -371,7 +365,7 @@ const styles = StyleSheet.create({
     pointsBadge: {
         backgroundColor: '#EFF6FF', 
         paddingHorizontal: 12,
-        paddingVertical: 8, // Um pouquinho mais de padding para área de clique confortável
+        paddingVertical: 8, 
         borderRadius: 20,
         borderWidth: 1,
         borderColor: '#DBEAFE',

@@ -188,7 +188,7 @@ export default function CartaoDeVacinas() {
 
             <View style={styles.pointsBadge}>
               <Text style={styles.pointsText}>
-                🛡️ {totalVacinas} vacinas
+                🛡️ Vacinas
               </Text>
             </View>
           </View>

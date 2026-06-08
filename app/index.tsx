@@ -5,6 +5,8 @@ import { verificarStatusVacina } from './utils/verificarStatusVacina'
 import { buscarClientes } from './storage/clientesStorage'
 import { buscarPets } from './storage/petsStorage'
 import { buscarVacinas } from '../app/storage/vacinasStrorage'
+import { exportarBackup, importarBackup } from './utils/backupService'
+import MenuModal from './components/MenuModal'
 
 const MASCOTE_IMG = require('../assets/images/mascote.jpeg');
 
@@ -29,85 +31,120 @@ function obterIniciais(nome: string) {
   return nomes[0][0].toUpperCase();
 }
 
-export default function ClientesPage() {
-  const [busca, setBusca] = useState('')
+function obterUltimaVacinaDoTipo(idPet: string, idVacina: string, vacinasAtuais: Vacina[]) {
+  const vacinasDoPet = vacinasAtuais.filter(
+    (v: Vacina) => v.idPet === idPet && v.idVacina === idVacina
+  )
+  if (vacinasDoPet.length === 0) return null
 
+  return vacinasDoPet.reduce((maisRecente: Vacina, atual: Vacina) => {
+    return new Date(atual.data).getTime() > new Date(maisRecente.data).getTime()
+      ? atual
+      : maisRecente
+  })
+}
+
+function obterStatusPet(idPet: string, vacinasAtuais: Vacina[]): StatusPet {
+  const ultimaV11 = obterUltimaVacinaDoTipo(idPet, "v11", vacinasAtuais)
+  const ultimaAntirrabica = obterUltimaVacinaDoTipo(idPet, "antirrabica", vacinasAtuais)
+  const ultimaVanguard = obterUltimaVacinaDoTipo(idPet, "vanguard", vacinasAtuais)
+  const ultimaAnticio = obterUltimaVacinaDoTipo(idPet, "anticio", vacinasAtuais)
+
+  const ultimasVacinas = [ultimaV11, ultimaAntirrabica, ultimaVanguard, ultimaAnticio].filter(Boolean) as Vacina[]
+
+  if (ultimasVacinas.length === 0) return "sem-vacina"
+
+  const possuiAtrasada = ultimasVacinas.some(
+    v => verificarStatusVacina(v.proxima || "") === "atrasada"
+  )
+  if (possuiAtrasada) return "atrasada"
+
+  const possuiProxima = ultimasVacinas.some(
+    v => verificarStatusVacina(v.proxima || "") === "proxima"
+  )
+  if (possuiProxima) return "proxima"
+
+  return "em-dia"
+}
+
+export default function ClientesPage() {
+  const [menuVisible, setMenuVisible] = useState(false)
+  const [busca, setBusca] = useState('')
   const [listaClientes, setListaClientes] = useState<any[]>([])
   const [petsPorCliente, setPetsPorCliente] = useState<Record<string, number>>({})
   const [clientesComAlerta, setClientesComAlerta] = useState<Record<string, boolean>>({})
 
-  function obterUltimaVacinaDoTipo(idPet: string, idVacina: string, vacinasAtuais: Vacina[]) {
-    const vacinasDoPet = vacinasAtuais.filter(
-      (v: Vacina) => v.idPet === idPet && v.idVacina === idVacina
-    )
-    if (vacinasDoPet.length === 0) return null
+  const [alertModal, setAlertModal] = useState({
+    visible: false,
+    title: '',
+    message: '',
+    tipo: 'sucesso' as 'sucesso' | 'erro'
+  })
 
-    return vacinasDoPet.reduce((maisRecente: Vacina, atual: Vacina) => {
-      return new Date(atual.data).getTime() > new Date(maisRecente.data).getTime()
-        ? atual
-        : maisRecente
+  const carregarDadosDoStorage = useCallback(async () => {
+    const [clientesDoBanco, petsDoBanco, vacinasDoBanco] = await Promise.all([
+      buscarClientes(),
+      buscarPets(),
+      buscarVacinas()
+    ]) as [any[], any[], any[]]
+
+    const clientesOrdenados = clientesDoBanco.sort((a: any, b: any) => 
+      a.nome?.localeCompare(b.nome)
+    );
+
+    setListaClientes(clientesOrdenados)
+
+    const totalPets = petsDoBanco.reduce<Record<string, number>>((acc, pet: any) => {
+      acc[pet.idCliente] = (acc[pet.idCliente] || 0) + 1
+      return acc
+    }, {})
+    setPetsPorCliente(totalPets)
+
+    const alertas: Record<string, boolean> = {}
+    clientesOrdenados.forEach((cliente: any) => {
+      const petsDoCliente = petsDoBanco.filter((pet: any) => pet.idCliente === cliente.id)
+      const temAlerta = petsDoCliente.some((pet: any) => {
+        const status = obterStatusPet(pet.id, vacinasDoBanco)
+        return status === "atrasada" || status === "proxima"
+      })
+      alertas[cliente.id] = temAlerta
     })
-  }
-
-  function obterStatusPet(idPet: string, vacinasAtuais: Vacina[]): StatusPet {
-    const ultimaV11 = obterUltimaVacinaDoTipo(idPet, "v11", vacinasAtuais)
-    const ultimaAntirrabica = obterUltimaVacinaDoTipo(idPet, "antirrabica", vacinasAtuais)
-    const ultimaVanguard = obterUltimaVacinaDoTipo(idPet, "vanguard", vacinasAtuais)
-    const ultimaAnticio = obterUltimaVacinaDoTipo(idPet, "anticio", vacinasAtuais)
-
-    const ultimasVacinas = [ultimaV11, ultimaAntirrabica, ultimaVanguard, ultimaAnticio].filter(Boolean) as Vacina[]
-
-    if (ultimasVacinas.length === 0) return "sem-vacina"
-
-    const possuiAtrasada = ultimasVacinas.some(
-      v => verificarStatusVacina(v.proxima || "") === "atrasada"
-    )
-    if (possuiAtrasada) return "atrasada"
-
-    const possuiProxima = ultimasVacinas.some(
-      v => verificarStatusVacina(v.proxima || "") === "proxima"
-    )
-    if (possuiProxima) return "proxima"
-
-    return "em-dia"
-  }
+    setClientesComAlerta(alertas)
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
-      async function carregarDadosDoStorage() {
-        const [clientesDoBanco, petsDoBanco, vacinasDoBanco] = await Promise.all([
-          buscarClientes(),
-          buscarPets(),
-          buscarVacinas()
-        ]) as [any[], any[], any[]]
-
-        const clientesOrdenados = clientesDoBanco.sort((a: any, b: any) => 
-          a.nome?.localeCompare(b.nome)
-        );
-
-        setListaClientes(clientesOrdenados)
-
-        const totalPets = petsDoBanco.reduce<Record<string, number>>((acc, pet: any) => {
-          acc[pet.idCliente] = (acc[pet.idCliente] || 0) + 1
-          return acc
-        }, {})
-        setPetsPorCliente(totalPets)
-
-        const alertas: Record<string, boolean> = {}
-        clientesOrdenados.forEach((cliente: any) => {
-          const petsDoCliente = petsDoBanco.filter((pet: any) => pet.idCliente === cliente.id)
-          const temAlerta = petsDoCliente.some((pet: any) => {
-            const status = obterStatusPet(pet.id, vacinasDoBanco)
-            return status === "atrasada" || status === "proxima"
-          })
-          alertas[cliente.id] = temAlerta
-        })
-        setClientesComAlerta(alertas)
-      }
-
       carregarDadosDoStorage()
-    }, [])
+    }, [carregarDadosDoStorage])
   )
+
+  async function testarBackup() {
+    setMenuVisible(false) 
+    const resultado = await exportarBackup()
+  }
+
+  async function testarImportacao() {
+    setMenuVisible(false) 
+    const resultado = await importarBackup()
+
+    if (resultado.sucesso) {
+      await carregarDadosDoStorage() 
+
+      setAlertModal({
+        visible: true,
+        title: 'Sucesso',
+        message: 'Backup restaurado com sucesso.',
+        tipo: 'sucesso'
+      })
+    } else {
+      setAlertModal({
+        visible: true,
+        title: 'Erro',
+        message: 'Não foi possível restaurar o backup.',
+        tipo: 'erro'
+      })
+    }
+  }
 
   const clientesFiltrados = listaClientes.filter(cliente =>
     cliente.nome?.toLowerCase().includes(busca.toLowerCase())
@@ -115,18 +152,16 @@ export default function ClientesPage() {
 
   return (
     <View style={styles.mainContainer}>
-  
+
       <View style={styles.headerContainer}>
         <View>
           <Text style={styles.headerHello}>Olá, Vet!</Text>
           <Text style={styles.headerTitle}>PetShop Manager</Text>
         </View>
 
-        <Image 
-          source={MASCOTE_IMG} 
-          style={styles.mascote} 
-          resizeMode="cover"
-        />
+        <TouchableOpacity onPress={() => setMenuVisible(true)}>
+          <Text style={{ fontSize: 22}}>☰</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.content}>
@@ -200,6 +235,61 @@ export default function ClientesPage() {
           <Text style={styles.buttonText}>Novo Cliente</Text>
         </TouchableOpacity>
       </View>
+
+      <MenuModal
+        visible={menuVisible}
+        onClose={() => setMenuVisible(false)}
+        title="Menu"
+        options={[
+          {
+            label: "Exportar Backup",
+            onPress: () => {
+              setMenuVisible(false)
+              testarBackup()
+            }
+          },
+          {
+            label: "Importar Backup",
+            onPress: () => {
+              setMenuVisible(false)
+              testarImportacao()
+            }
+          }
+        ]}
+      />
+
+      {alertModal.visible && (
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalBox, { padding: 20, alignItems: 'center' }]}>
+            
+            <Text style={[
+              styles.modalTitle, 
+              { color: alertModal.tipo === 'erro' ? Colors.danger : Colors.primary }
+            ]}>
+              {alertModal.title}
+            </Text>
+            
+            <Text style={styles.modalAlertMessage}>
+              {alertModal.message}
+            </Text>
+
+            <TouchableOpacity
+              style={[
+                styles.modalButton, 
+                { 
+                  backgroundColor: alertModal.tipo === 'erro' ? Colors.danger : Colors.primary, 
+                  width: '100%', 
+                  marginTop: 16,
+                  marginBottom: 0 
+                }
+              ]}
+              onPress={() => setAlertModal(prev => ({ ...prev, visible: false }))}
+            >
+              <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 16 }}>OK</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
     </View>
   )
 }
@@ -224,8 +314,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 60, 
+    paddingHorizontal: 15,
+    paddingTop: 37, 
     paddingBottom: 20,
     backgroundColor: Colors.bg,
     borderBottomWidth: 1,
@@ -241,12 +331,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: Colors.textPrincipal,
     letterSpacing: -0.5,
-  },
-  mascote: {
-    width: 56,
-    height: 56,
-    borderRadius: 28, 
-    backgroundColor: Colors.bgSecundario, 
   },
   content: {
     flex: 1,
@@ -387,5 +471,53 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: 16,
     letterSpacing: 0.3
+  },
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 999,
+  },
+  modalBox: {
+    width: '85%',
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 16,
+    color: Colors.textPrincipal,
+    textAlign: 'center',
+  },
+  modalButton: {
+    padding: 14,
+    backgroundColor: Colors.bgSecundario,
+    borderRadius: 10,
+    marginBottom: 10,
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    color: Colors.textPrincipal,
+    fontWeight: '600',
+    fontSize: 15
+  },
+  modalAlertMessage: {
+    fontSize: 15,
+    color: Colors.textSecundario,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginVertical: 4
   }
 })
