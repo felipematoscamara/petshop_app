@@ -13,6 +13,7 @@ export default function NovaVacina() {
   const idPet = Array.isArray(id) ? id[0] : String(id)
 
   const [vacinaSelecionada, setVacinaSelecionada] = useState('')
+  const [outraVacina, setOutraVacina] = useState('')
   const [dose, setDose] = useState('')
   const [data, setData] = useState<Date | null>(null)
   const [proxima, setProxima] = useState<Date | null>(null)
@@ -21,6 +22,11 @@ export default function NovaVacina() {
   const [mensagem, setMensagem] = useState('')
 
   async function salvarVacina() {
+    const vacinaFinal =
+      vacinaSelecionada === 'Outro'
+        ? outraVacina.trim()
+        : vacinaSelecionada.trim()
+
     const pets = await buscarPets()
     const pet = pets.find((p: any) => p.id === idPet)
 
@@ -36,40 +42,28 @@ export default function NovaVacina() {
       return
     }
 
+    if (vacinaSelecionada === 'Outro' && !outraVacina.trim()) {
+      setMensagem('Digite o nome da vacina')
+      setMessageVisible(true)
+      return
+    }
+
     const vacinas = await buscarVacinas()
-
-    let nomeVacina = ''
-
-    if (vacinaSelecionada === 'v11') {
-      nomeVacina = 'V11'
-    }
-
-    if (vacinaSelecionada === 'antirrabica') {
-      nomeVacina = 'Antirrábica'
-    }
-
-    if (vacinaSelecionada === 'vanguard') {
-      nomeVacina = 'Vanguard'
-    }
-
-    if (vacinaSelecionada === 'anticio') {
-      nomeVacina = 'Anti-cio'
-    }
 
     vacinas.push({
       id: gerarVacinaId(),
       idVacina: vacinaSelecionada,
-      vacina: nomeVacina,
+      vacina: vacinaFinal,
       dose: dose.trim(),
       data: data.toISOString(),
-      proxima: proxima ? proxima.toISOString() : null,
+      proxima: proxima.toISOString(),
       idPet: idPet
     })
 
     await salvarVacinas(vacinas)
 
     router.back()
-  }
+ }
 
   return (
     <View style={styles.mainContainer}>
@@ -151,7 +145,37 @@ export default function NovaVacina() {
                 Anti-cio
               </Text>
             </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[
+                styles.optionButton,
+                vacinaSelecionada === 'Outro' && styles.optionButtonSelected
+              ]}
+              onPress={() => setVacinaSelecionada('Outro')}
+              activeOpacity={0.85}
+            >
+              <Text
+                style={[
+                  styles.optionText,
+                  vacinaSelecionada === 'Outro' && styles.optionTextSelected
+                ]}
+              >
+                Outro
+              </Text>
+            </TouchableOpacity>
           </View>
+
+          {vacinaSelecionada === 'Outro' && (
+            <View style={{ marginTop: 12 }}>
+              <TextInput
+                placeholder="Digite a vacina"
+                placeholderTextColor={Colors.textSecundario}
+                style={styles.input}
+                value={outraVacina}
+                onChangeText={setOutraVacina}
+              />
+            </View>
+          )}
         </View>
 
         <View style={styles.inputGroup}>

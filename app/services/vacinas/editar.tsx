@@ -1,4 +1,12 @@
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, ActivityIndicator, Platform } from 'react-native'
+import {
+  StyleSheet,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ActivityIndicator,
+  Platform
+} from 'react-native'
 import { useEffect, useState } from 'react'
 import { useLocalSearchParams, router } from 'expo-router'
 import Header from '@/app/components/Header'
@@ -26,6 +34,7 @@ export default function EditarVacina() {
   const [pet, setPet] = useState<any>(null)
 
   const [vacinaSelecionada, setVacinaSelecionada] = useState('')
+  const [outraVacina, setOutraVacina] = useState('')
   const [dose, setDose] = useState('')
   const [data, setData] = useState<Date | null>(null)
   const [proxima, setProxima] = useState<Date | null>(null)
@@ -57,12 +66,10 @@ export default function EditarVacina() {
 
           if (['v11', 'antirrabica', 'vanguard', 'anticio'].includes(vacinaInterna)) {
             setVacinaSelecionada(vacinaInterna)
+            setOutraVacina('')
           } else {
-            if (vAtual.vacina === 'V11') setVacinaSelecionada('v11')
-            else if (vAtual.vacina === 'Antirrábica') setVacinaSelecionada('antirrabica')
-            else if (vAtual.vacina === 'Vanguard') setVacinaSelecionada('vanguard')
-            else if (vAtual.vacina === 'Anti-cio') setVacinaSelecionada('anticio')
-            else setVacinaSelecionada('')
+            setVacinaSelecionada('outro')
+            setOutraVacina(vAtual.vacina || '')
           }
         } else {
           setVacinaAtual(null)
@@ -81,31 +88,32 @@ export default function EditarVacina() {
   async function salvarVacina() {
     if (!vacinaAtual) return
 
+    const nomeVacinaFinal =
+      vacinaSelecionada === 'outro'
+        ? outraVacina.trim()
+        : vacinaSelecionada === 'v11'
+          ? 'V11'
+          : vacinaSelecionada === 'antirrabica'
+            ? 'Antirrábica'
+            : vacinaSelecionada === 'vanguard'
+              ? 'Vanguard'
+              : vacinaSelecionada === 'anticio'
+                ? 'Anti-cio'
+                : ''
+
     if (!vacinaSelecionada || !dose.trim() || !data || !proxima) {
       setMensagem('Preencha os campos obrigatórios (*)')
       setMessageVisible(true)
       return
     }
 
+    if (vacinaSelecionada === 'outro' && !outraVacina.trim()) {
+      setMensagem('Digite o nome da vacina')
+      setMessageVisible(true)
+      return
+    }
+
     try {
-      let nomeVacina = ''
-
-      if (vacinaSelecionada === 'v11') {
-        nomeVacina = 'V11'
-      }
-
-      if (vacinaSelecionada === 'antirrabica') {
-        nomeVacina = 'Antirrábica'
-      }
-
-      if (vacinaSelecionada === 'vanguard') {
-        nomeVacina = 'Vanguard'
-      }
-
-      if (vacinaSelecionada === 'anticio') {
-        nomeVacina = 'Anti-cio'
-      }
-
       const todasVacinas = await buscarVacinas()
 
       const vacinasAtualizadas = todasVacinas.map((v: Vacina) => {
@@ -113,7 +121,7 @@ export default function EditarVacina() {
           return {
             ...v,
             idVacina: vacinaSelecionada,
-            vacina: nomeVacina,
+            vacina: nomeVacinaFinal,
             dose: dose.trim(),
             data: data.toISOString(),
             proxima: proxima ? proxima.toISOString() : null
@@ -134,7 +142,12 @@ export default function EditarVacina() {
 
   if (loading) {
     return (
-      <View style={[styles.mainContainer, { justifyContent: 'center', alignItems: 'center' }]}>
+      <View
+        style={[
+          styles.mainContainer,
+          { justifyContent: 'center', alignItems: 'center' }
+        ]}
+      >
         <ActivityIndicator size="large" color={Colors.primary} />
       </View>
     )
@@ -145,7 +158,7 @@ export default function EditarVacina() {
       <View style={styles.mainContainer}>
         <MessageModal
           visible={true}
-          mensagem='Ops! Não conseguimos localizar os dados desta vacina. Você será redirecionado para a página inicial ;)'
+          mensagem="Ops! Não conseguimos localizar os dados desta vacina. Você será redirecionado para a página inicial ;)"
           onClose={() => router.replace('/')}
         />
       </View>
@@ -162,7 +175,10 @@ export default function EditarVacina() {
 
           <View style={styles.optionContainer}>
             <TouchableOpacity
-              onPress={() => setVacinaSelecionada('v11')}
+              onPress={() => {
+                setVacinaSelecionada('v11')
+                setOutraVacina('')
+              }}
               style={[
                 styles.optionButton,
                 vacinaSelecionada === 'v11' && styles.optionButtonSelected
@@ -180,7 +196,10 @@ export default function EditarVacina() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => setVacinaSelecionada('antirrabica')}
+              onPress={() => {
+                setVacinaSelecionada('antirrabica')
+                setOutraVacina('')
+              }}
               style={[
                 styles.optionButton,
                 vacinaSelecionada === 'antirrabica' && styles.optionButtonSelected
@@ -198,7 +217,10 @@ export default function EditarVacina() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => setVacinaSelecionada('vanguard')}
+              onPress={() => {
+                setVacinaSelecionada('vanguard')
+                setOutraVacina('')
+              }}
               style={[
                 styles.optionButton,
                 vacinaSelecionada === 'vanguard' && styles.optionButtonSelected
@@ -216,7 +238,10 @@ export default function EditarVacina() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => setVacinaSelecionada('anticio')}
+              onPress={() => {
+                setVacinaSelecionada('anticio')
+                setOutraVacina('')
+              }}
               style={[
                 styles.optionButton,
                 vacinaSelecionada === 'anticio' && styles.optionButtonSelected
@@ -232,13 +257,43 @@ export default function EditarVacina() {
                 Anti-cio
               </Text>
             </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => setVacinaSelecionada('outro')}
+              style={[
+                styles.optionButton,
+                vacinaSelecionada === 'outro' && styles.optionButtonSelected
+              ]}
+              activeOpacity={0.85}
+            >
+              <Text
+                style={[
+                  styles.optionText,
+                  vacinaSelecionada === 'outro' && styles.optionTextSelected
+                ]}
+              >
+                Outro
+              </Text>
+            </TouchableOpacity>
           </View>
+
+          {vacinaSelecionada === 'outro' && (
+            <View style={{ marginTop: 12 }}>
+              <TextInput
+                placeholder="Digite o nome da vacina"
+                placeholderTextColor={Colors.textSecundario}
+                value={outraVacina}
+                onChangeText={setOutraVacina}
+                style={styles.input}
+              />
+            </View>
+          )}
         </View>
 
         <View style={styles.inputGroup}>
           <Text style={styles.fieldLabel}>DOSE *</Text>
           <TextInput
-            placeholder='Ex: 1ª dose'
+            placeholder="Ex: 1ª dose"
             placeholderTextColor={Colors.textSecundario}
             value={dose}
             onChangeText={setDose}
@@ -249,7 +304,7 @@ export default function EditarVacina() {
         <View style={styles.inputGroup}>
           <Text style={styles.fieldLabel}>DATA DA APLICAÇÃO *</Text>
           <DateInput
-            placeholder='Selecione uma data'
+            placeholder="Selecione uma data"
             value={data}
             onChange={setData}
             style={styles.input}
@@ -259,7 +314,7 @@ export default function EditarVacina() {
         <View style={styles.inputGroup}>
           <Text style={styles.fieldLabel}>PRÓXIMA DOSE *</Text>
           <DateInput
-            placeholder='Selecione uma data'
+            placeholder="Selecione uma data"
             value={proxima}
             onChange={setProxima}
             style={styles.input}
@@ -292,23 +347,23 @@ const Colors = {
   textPrincipal: '#1E293B',
   textSecundario: '#64748B',
   primary: '#007BFF',
-  border: '#E2E8F0',
+  border: '#E2E8F0'
 }
 
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
-    backgroundColor: Colors.bgSecundario,
+    backgroundColor: Colors.bgSecundario
   },
 
   content: {
     flex: 1,
     paddingHorizontal: 20,
-    paddingTop: 24,
+    paddingTop: 24
   },
 
   inputGroup: {
-    marginBottom: 20,
+    marginBottom: 20
   },
 
   fieldLabel: {
@@ -316,7 +371,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.textSecundario,
     letterSpacing: 0.6,
-    marginBottom: 6,
+    marginBottom: 6
   },
 
   input: {
@@ -333,18 +388,18 @@ const styles = StyleSheet.create({
         shadowColor: '#0F172A',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.02,
-        shadowRadius: 4,
+        shadowRadius: 4
       },
       android: {
-        elevation: 1,
-      },
-    }),
+        elevation: 1
+      }
+    })
   },
 
   optionContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: 10
   },
 
   optionButton: {
@@ -362,27 +417,27 @@ const styles = StyleSheet.create({
         shadowColor: '#0F172A',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.02,
-        shadowRadius: 4,
+        shadowRadius: 4
       },
       android: {
-        elevation: 1,
-      },
-    }),
+        elevation: 1
+      }
+    })
   },
 
   optionButtonSelected: {
     backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
+    borderColor: Colors.primary
   },
 
   optionText: {
     color: Colors.textPrincipal,
     fontWeight: '700',
-    fontSize: 14,
+    fontSize: 14
   },
 
   optionTextSelected: {
-    color: '#FFF',
+    color: '#FFF'
   },
 
   footer: {
@@ -395,7 +450,7 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: Platform.OS === 'ios' ? 34 : 20,
     borderTopWidth: 1,
-    borderTopColor: Colors.border,
+    borderTopColor: Colors.border
   },
 
   button: {
@@ -408,13 +463,13 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
-    elevation: 3,
+    elevation: 3
   },
 
   buttonText: {
     color: '#FFF',
     fontWeight: '700',
     fontSize: 16,
-    letterSpacing: 0.3,
-  },
+    letterSpacing: 0.3
+  }
 })

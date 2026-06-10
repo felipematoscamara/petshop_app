@@ -1,5 +1,5 @@
 import { useLocalSearchParams, router } from 'expo-router'
-import { StyleSheet, TouchableOpacity, View, Text, Platform } from 'react-native'
+import { StyleSheet, TouchableOpacity, View, Text, Platform, TextInput } from 'react-native'
 import { useState } from 'react'
 import { buscarPets } from '@/app/storage/petsStorage'
 import { buscarClientes, salvarClientes } from '@/app/storage/clientesStorage'
@@ -11,17 +11,21 @@ import MessageModal from '@/app/components/MessageModal'
 
 export default function NovoServico() {
   const { id } = useLocalSearchParams()
+  const idPet = Array.isArray(id) ? id[0] : String(id)
 
   const [messageVisible, setMessageVisible] = useState(false)
   const [mensagem, setMensagem] = useState('')
 
   const [banho, setBanho] = useState(false)
   const [tosa, setTosa] = useState(false)
+  const [outro, setOutro] = useState(false)
+  const [outroServico, setOutroServico] = useState('')
+  const [pontosOutro, setPontosOutro] = useState('')
   const [data, setData] = useState<Date | null>(null)
 
   async function registrarServico() {
     const pets = await buscarPets()
-    const pet = pets.find((p: any) => p.id === id)
+    const pet = pets.find((p: any) => p.id === idPet)
 
     if (!pet) {
       setMensagem(
@@ -40,8 +44,28 @@ export default function NovoServico() {
       return
     }
 
-    if (!data || (!banho && !tosa)) {
+    if (!data || (!banho && !tosa && !outro)) {
       setMensagem('Preencha os campos obrigatórios (*)')
+      setMessageVisible(true)
+      return
+    }
+
+    if (outro && !outroServico.trim()) {
+      setMensagem('Digite o nome do serviço')
+      setMessageVisible(true)
+      return
+    }
+
+    if (outro && !pontosOutro.trim()) {
+      setMensagem('Digite a quantidade de pontos')
+      setMessageVisible(true)
+      return
+    }
+
+    const pontosDigitados = Number(pontosOutro)
+
+    if (outro && (isNaN(pontosDigitados) || pontosDigitados <= 0)) {
+      setMensagem('Informe uma quantidade de pontos válida')
       setMessageVisible(true)
       return
     }
@@ -78,6 +102,19 @@ export default function NovoServico() {
       cliente.pontos = (cliente.pontos || 0) + pontos
     }
 
+    if (outro) {
+      servicos.push({
+        id: gerarServicoId(),
+        servico: outroServico.trim(),
+        data: data.toISOString(),
+        pontos: pontosDigitados,
+        idPet: pet.id,
+        idCliente: cliente.id
+      })
+
+      cliente.pontos = (cliente.pontos || 0) + pontosDigitados
+    }
+
     const novaListaClientes = clientes.map((c: any) =>
       c.id === cliente.id ? cliente : c
     )
@@ -102,7 +139,16 @@ export default function NovoServico() {
                 styles.optionButton,
                 banho && styles.optionButtonSelected
               ]}
-              onPress={() => setBanho(!banho)}
+              onPress={() => {
+                const novoValor = !banho
+                setBanho(novoValor)
+
+                if (novoValor) {
+                  setOutro(false)
+                  setOutroServico('')
+                  setPontosOutro('')
+                }
+              }}
               activeOpacity={0.85}
             >
               <Text
@@ -120,7 +166,16 @@ export default function NovoServico() {
                 styles.optionButton,
                 tosa && styles.optionButtonSelected
               ]}
-              onPress={() => setTosa(!tosa)}
+              onPress={() => {
+                const novoValor = !tosa
+                setTosa(novoValor)
+
+                if (novoValor) {
+                  setOutro(false)
+                  setOutroServico('')
+                  setPontosOutro('')
+                }
+              }}
               activeOpacity={0.85}
             >
               <Text
@@ -132,7 +187,61 @@ export default function NovoServico() {
                 Tosa
               </Text>
             </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.optionButton,
+                outro && styles.optionButtonSelected
+              ]}
+              onPress={() => {
+                const novoValor = !outro
+                setOutro(novoValor)
+
+                if (novoValor) {
+                  setBanho(false)
+                  setTosa(false)
+                } else {
+                  setOutroServico('')
+                  setPontosOutro('')
+                }
+              }}
+              activeOpacity={0.85}
+            >
+              <Text
+                style={[
+                  styles.optionText,
+                  outro && styles.optionTextSelected
+                ]}
+              >
+                Outro
+              </Text>
+            </TouchableOpacity>
           </View>
+
+          {outro && (
+            <>
+              <View style={{ marginTop: 12 }}>
+                <TextInput
+                  placeholder="Digite o nome do serviço"
+                  placeholderTextColor={Colors.textSecundario}
+                  style={styles.input}
+                  value={outroServico}
+                  onChangeText={setOutroServico}
+                />
+              </View>
+
+              <View style={{ marginTop: 12 }}>
+                <TextInput
+                  placeholder="Quantidade de pontos"
+                  placeholderTextColor={Colors.textSecundario}
+                  style={styles.input}
+                  value={pontosOutro}
+                  onChangeText={setPontosOutro}
+                  keyboardType="numeric"
+                />
+              </View>
+            </>
+          )}
         </View>
 
         <View style={styles.inputGroup}>
@@ -221,7 +330,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
-
     ...Platform.select({
       ios: {
         shadowColor: '#0F172A',
@@ -269,7 +377,6 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-
     shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,

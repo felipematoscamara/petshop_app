@@ -78,7 +78,8 @@ export default function ClientesPage() {
     visible: false,
     title: '',
     message: '',
-    tipo: 'sucesso' as 'sucesso' | 'erro'
+    tipo: 'sucesso' as 'sucesso' | 'erro' | 'aviso',
+    onConfirm: null as (() => void) | null
   })
 
   const carregarDadosDoStorage = useCallback(async () => {
@@ -134,16 +135,32 @@ export default function ClientesPage() {
         visible: true,
         title: 'Sucesso',
         message: 'Backup restaurado com sucesso.',
-        tipo: 'sucesso'
+        tipo: 'sucesso',
+        onConfirm: null
       })
     } else {
       setAlertModal({
         visible: true,
         title: 'Erro',
         message: 'Não foi possível restaurar o backup.',
-        tipo: 'erro'
+        tipo: 'erro',
+        onConfirm: null
       })
     }
+  }
+
+  const abrirConfirmacaoImportacao = () => {
+    setMenuVisible(false)
+    setAlertModal({
+      visible: true,
+      title: 'Atenção!',
+      message: 'Todos os dados atuais (clientes, pets, serviços, vacinas e pontos) serão substituídos pelos dados do arquivo selecionado e a ação não pode ser desfeita.',
+      tipo: 'aviso',
+      onConfirm: () => {
+        setAlertModal(prev => ({ ...prev, visible: false }))
+        testarImportacao()
+      }
+    })
   }
 
   const clientesFiltrados = listaClientes.filter(cliente =>
@@ -250,10 +267,7 @@ export default function ClientesPage() {
           },
           {
             label: "Importar Backup",
-            onPress: () => {
-              setMenuVisible(false)
-              testarImportacao()
-            }
+            onPress: abrirConfirmacaoImportacao
           }
         ]}
       />
@@ -264,7 +278,13 @@ export default function ClientesPage() {
             
             <Text style={[
               styles.modalTitle, 
-              { color: alertModal.tipo === 'erro' ? Colors.danger : Colors.primary }
+              { 
+                color: alertModal.tipo === 'erro' 
+                  ? Colors.danger 
+                  : alertModal.tipo === 'aviso' 
+                    ? '#EAB308'
+                    : Colors.primary 
+              }
             ]}>
               {alertModal.title}
             </Text>
@@ -273,20 +293,56 @@ export default function ClientesPage() {
               {alertModal.message}
             </Text>
 
-            <TouchableOpacity
-              style={[
-                styles.modalButton, 
-                { 
-                  backgroundColor: alertModal.tipo === 'erro' ? Colors.danger : Colors.primary, 
-                  width: '100%', 
-                  marginTop: 16,
-                  marginBottom: 0 
-                }
-              ]}
-              onPress={() => setAlertModal(prev => ({ ...prev, visible: false }))}
-            >
-              <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 16 }}>OK</Text>
-            </TouchableOpacity>
+            {alertModal.tipo === 'aviso' ? (
+              <View style={{ flexDirection: 'row', width: '100%', gap: 12, marginTop: 16 }}>
+                <TouchableOpacity
+                  style={[
+                    styles.modalButton, 
+                    { 
+                      backgroundColor: '#94A3B8', 
+                      flex: 1,
+                      marginTop: 0,
+                      marginBottom: 0 
+                    }
+                  ]}
+                  onPress={() => setAlertModal(prev => ({ ...prev, visible: false }))}
+                >
+                  <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 16 }}>Cancelar</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.modalButton, 
+                    { 
+                      backgroundColor: Colors.danger, 
+                      flex: 1,
+                      marginTop: 0,
+                      marginBottom: 0 
+                    }
+                  ]}
+                  onPress={() => {
+                    if (alertModal.onConfirm) alertModal.onConfirm();
+                  }}
+                >
+                  <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 16 }}>Importar</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={[
+                  styles.modalButton, 
+                  { 
+                    backgroundColor: alertModal.tipo === 'erro' ? Colors.danger : Colors.primary, 
+                    width: '100%', 
+                    marginTop: 16,
+                    marginBottom: 0 
+                  }
+                ]}
+                onPress={() => setAlertModal(prev => ({ ...prev, visible: false }))}
+              >
+                <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 16 }}>OK</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       )}
