@@ -42,7 +42,7 @@ export default function NovoPet() {
       idCliente: String(idCliente)
     }
 
-    const listaPets = await buscarPets()
+    const listaPets = (await buscarPets()) || []
     listaPets.push(novoPet)
     await salvarPets(listaPets)
 

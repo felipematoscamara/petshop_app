@@ -76,7 +76,7 @@ export default function CartaoDeVacinas() {
 
           const petEncontrado = allPets.find((p: any) => p.id === id)
           setPet(petEncontrado || null)
-          setListaVacinas(allVacinas)
+          setListaVacinas(allVacinas || [])
         } catch (error) {
           console.error('Erro ao carregar cartão de vacinas:', error)
         } finally {
@@ -131,7 +131,7 @@ export default function CartaoDeVacinas() {
     if (!vacinaSelecionada) return
 
     try {
-      const todasVacinas = await buscarVacinas()
+      const todasVacinas = await buscarVacinas() || []
 
       const novaListaGeral = todasVacinas.filter(
         (v: Vacina) => String(v.id) !== String(vacinaSelecionada.id)

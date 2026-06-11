@@ -7,8 +7,8 @@ import MessageModal from "../components/MessageModal"
 import MenuModal from "../components/MenuModal"
 import { verificarStatusVacina } from "../utils/verificarStatusVacina"
 import { buscarClientes, salvarClientes } from "../storage/clientesStorage"
-import { buscarPets } from "../storage/petsStorage"
-import { buscarVacinas } from "../storage/vacinasStrorage"
+import { buscarPets, salvarPets } from "../storage/petsStorage"
+import { buscarVacinas, salvarVacinas } from "../storage/vacinasStrorage"
 import { buscarServicos, salvarServicos } from "../storage/servicosStorage"
 
 type StatusTipo = "atrasada" | "proxima" | "em-dia" | "sem-vacina";
@@ -96,13 +96,36 @@ export default function Cliente() {
     }
 
     async function excluirCliente() {
-        const allClientes = await buscarClientes()
-        const novaLista = allClientes.filter((c: any) => c.id !== id)
-        
-        await salvarClientes(novaLista)
+    try {
+        const [allClientes, allPets, allVacinas, allServicos] = await Promise.all([
+            buscarClientes(),
+            buscarPets(),
+            buscarVacinas(),
+            buscarServicos()
+        ]) as [any[], any[], any[], any[]]
+
+        const novaListaClientes = allClientes.filter((c: any) => c.id !== id)
+
+        const petsDoCliente = allPets.filter((p: any) => p.idCliente === id)
+        const idsPetsDeletados = petsDoCliente.map(pet => pet.id)
+        const novaListaPets = allPets.filter((p: any) => p.idCliente !== id)
+
+        const novaListaVacinas = allVacinas.filter(v => !idsPetsDeletados.includes(v.idPet))
+        const novaListaServicos = allServicos.filter(s => !idsPetsDeletados.includes(s.idPet))
+
+        await Promise.all([
+            salvarClientes(novaListaClientes),
+            salvarPets(novaListaPets),
+            salvarVacinas(novaListaVacinas),
+            salvarServicos(novaListaServicos)
+        ])
+
         setConfirmModalVisible(false) 
         router.back()
+    } catch (error) {
+        console.error("Erro ao excluir cliente em cascata:", error)
     }
+}
 
     async function limparPontosCliente() {
         try {
@@ -121,34 +144,48 @@ export default function Cliente() {
         }
     }
 
-    function obtenerStatusPet(idPet: string): StatusTipo {
-        const vacinasDoPet = listaVacinas.filter(v => v.idPet === idPet)
+function normalizarIdVacina(idVacina: string) {
+    if (!idVacina) return "";
+    return idVacina
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "") 
+        .toLowerCase()                  
+        .replace(/[-\s]/g, "");          
+}
 
-        if (vacinasDoPet.length === 0) return "sem-vacina"
+function obtenerStatusPet(idPet: string): StatusTipo {
+    const vacinasDoPet = listaVacinas.filter(v => v.idPet === idPet)
 
-        const ultimasVacinasMap: Record<string, any> = {}
+    if (vacinasDoPet.length === 0) return "sem-vacina"
+
+    const ultimasVacinasMap: Record<string, any> = {}
+    
+    vacinasDoPet.forEach(vacina => {
         
-        vacinasDoPet.forEach(vacina => {
-            const vacinaExistente = ultimasVacinasMap[vacina.idVacina]
-            if (!vacinaExistente || new Date(vacina.data).getTime() > new Date(vacinaExistente.data).getTime()) {
-                ultimasVacinasMap[vacina.idVacina] = vacina
-            }
-        })
+        const chaveNormalizada = normalizarIdVacina(vacina.idVacina)
+        
+        const vacinaExistente = ultimasVacinasMap[chaveNormalizada]
+        
+   
+        if (!vacinaExistente || new Date(vacina.data).getTime() > new Date(vacinaExistente.data).getTime()) {
+            ultimasVacinasMap[chaveNormalizada] = vacina
+        }
+    })
 
-        const ultimasVacinas = Object.values(ultimasVacinasMap)
+    const ultimasVacinas = Object.values(ultimasVacinasMap)
 
-        const possuiAtrasada = ultimasVacinas.some(
-            v => verificarStatusVacina(v!.proxima) === "atrasada"
-        )
-        if (possuiAtrasada) return "atrasada"
+    const possuiAtrasada = ultimasVacinas.some(
+        v => verificarStatusVacina(v.proxima || "") === "atrasada"
+    )
+    if (possuiAtrasada) return "atrasada"
 
-        const possuiProxima = ultimasVacinas.some(
-            v => verificarStatusVacina(v!.proxima) === "proxima"
-        )
-        if (possuiProxima) return "proxima"
+    const possuiProxima = ultimasVacinas.some(
+        v => verificarStatusVacina(v.proxima || "") === "proxima"
+    )
+    if (possuiProxima) return "proxima"
 
-        return "em-dia"
-    }
+    return "em-dia"
+}
 
     function obterEstiloStatus(status: StatusTipo) {
         switch (status) {

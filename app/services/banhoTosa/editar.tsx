@@ -1,21 +1,19 @@
 import { useEffect, useState } from 'react'
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Platform,
-  ActivityIndicator,
-  TextInput
-} from 'react-native'
+import { View, Text, TouchableOpacity, StyleSheet, Platform, ActivityIndicator, TextInput } from 'react-native'
 import { useLocalSearchParams, router } from 'expo-router'
 import Header from '@/app/components/Header'
 import DateInput from '@/app/components/DateInput'
-import MenuModal from '@/app/components/MenuModal'
 import MessageModal from '@/app/components/MessageModal'
 import { buscarServicos, salvarServicos } from '@/app/storage/servicosStorage'
 import { buscarPets } from '@/app/storage/petsStorage'
 import { buscarClientes, salvarClientes } from '@/app/storage/clientesStorage'
+
+function criarDateLocal(dataRaw?: string): Date | null {
+  if (!dataRaw) return null
+  const dataLimpa = dataRaw.includes('T') ? dataRaw.split('T')[0] : dataRaw
+  const [ano, mes, dia] = dataLimpa.split('-').map(Number)
+  return new Date(ano, mes - 1, dia)
+}
 
 export default function EditarServico() {
   const { id } = useLocalSearchParams()
@@ -47,7 +45,11 @@ export default function EditarServico() {
           buscarClientes()
         ])
 
-        const sAtual = allServicos.find(
+        const listaServicosSegura = allServicos || []
+        const listaPetsSegura = allPets || []
+        const listaClientesSegura = allClientes || []
+
+        const sAtual = listaServicosSegura.find(
           (s: any) => String(s.id) === String(servicoId)
         )
 
@@ -55,14 +57,14 @@ export default function EditarServico() {
           setServicoAtual(sAtual)
 
           const petEncontrado =
-            allPets.find((p: any) => String(p.id) === String(sAtual.idPet)) || null
+            listaPetsSegura.find((p: any) => String(p.id) === String(sAtual.idPet)) || null
           setPet(petEncontrado)
 
           const clienteEncontrado =
-            allClientes.find((c: any) => String(c.id) === String(sAtual.idCliente)) || null
+            listaClientesSegura.find((c: any) => String(c.id) === String(sAtual.idCliente)) || null
           setCliente(clienteEncontrado)
 
-          setData(new Date(sAtual.data))
+          setData(criarDateLocal(sAtual.data))
 
           if (sAtual.servico === 'Banho') {
             setBanho(true)
@@ -116,7 +118,6 @@ export default function EditarServico() {
     }
 
     const pontosDigitados = Number(pontosOutro)
-
     if (outro && (isNaN(pontosDigitados) || pontosDigitados <= 0)) {
       setMensagem('Informe uma quantidade de pontos válida')
       setMessageVisible(true)
@@ -140,11 +141,9 @@ export default function EditarServico() {
         novosPontos = servicoZerado ? 0 : pontosDigitados
       }
 
-      const [todosServicos, todosClientes, todosPets] = await Promise.all([
-        buscarServicos(),
-        buscarClientes(),
-        buscarPets()
-      ])
+      const todosServicos = (await buscarServicos()) || []
+      const todosClientes = (await buscarClientes()) || []
+      const todosPets = (await buscarPets()) || []
 
       const servicosAtualizados = todosServicos.map((s: any) => {
         if (String(s.id) === String(servicoAtual.id)) {
@@ -193,12 +192,7 @@ export default function EditarServico() {
 
   if (loading) {
     return (
-      <View
-        style={[
-          styles.mainContainer,
-          { justifyContent: 'center', alignItems: 'center' }
-        ]}
-      >
+      <View style={[styles.mainContainer, { justifyContent: 'center', alignItems: 'center' }]}>
         <ActivityIndicator size="large" color={Colors.primary} />
       </View>
     )
@@ -218,7 +212,8 @@ export default function EditarServico() {
 
   return (
     <View style={styles.mainContainer}>
-      <Header titulo="Editar Serviço" />
+      
+      <Header titulo={`Editar Serviço: ${pet.nome}`} />
 
       <View style={styles.content}>
         <View style={styles.inputGroup}>
@@ -226,13 +221,9 @@ export default function EditarServico() {
 
           <View style={styles.optionContainer}>
             <TouchableOpacity
-              style={[
-                styles.optionButton,
-                banho && styles.optionButtonSelected
-              ]}
+              style={[styles.optionButton, banho && styles.optionButtonSelected]}
               onPress={() => {
-                const novoValor = !banho
-                setBanho(novoValor)
+                setBanho(true)
                 setTosa(false)
                 setOutro(false)
                 setOutroServico('')
@@ -240,24 +231,15 @@ export default function EditarServico() {
               }}
               activeOpacity={0.85}
             >
-              <Text
-                style={[
-                  styles.optionText,
-                  banho && styles.optionTextSelected
-                ]}
-              >
+              <Text style={[styles.optionText, banho && styles.optionTextSelected]}>
                 Banho
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[
-                styles.optionButton,
-                tosa && styles.optionButtonSelected
-              ]}
+              style={[styles.optionButton, tosa && styles.optionButtonSelected]}
               onPress={() => {
-                const novoValor = !tosa
-                setTosa(novoValor)
+                setTosa(true)
                 setBanho(false)
                 setOutro(false)
                 setOutroServico('')
@@ -265,41 +247,23 @@ export default function EditarServico() {
               }}
               activeOpacity={0.85}
             >
-              <Text
-                style={[
-                  styles.optionText,
-                  tosa && styles.optionTextSelected
-                ]}
-              >
+              <Text style={[styles.optionText, tosa && styles.optionTextSelected]}>
                 Tosa
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[
-                styles.optionButton,
-                outro && styles.optionButtonSelected
-              ]}
+              style={[styles.optionButton, outro && styles.optionButtonSelected]}
               onPress={() => {
-                const novoValor = !outro
-                setOutro(novoValor)
-
-                if (novoValor) {
-                  setBanho(false)
-                  setTosa(false)
-                } else {
-                  setOutroServico('')
-                  setPontosOutro('')
-                }
+                setOutro(true)
+                setBanho(false)
+                setTosa(false)
+                setOutroServico('')
+                setPontosOutro('')
               }}
               activeOpacity={0.85}
             >
-              <Text
-                style={[
-                  styles.optionText,
-                  outro && styles.optionTextSelected
-                ]}
-              >
+              <Text style={[styles.optionText, outro && styles.optionTextSelected]}>
                 Outro
               </Text>
             </TouchableOpacity>
@@ -333,7 +297,6 @@ export default function EditarServico() {
 
         <View style={styles.inputGroup}>
           <Text style={styles.fieldLabel}>DATA DO SERVIÇO *</Text>
-
           <DateInput
             placeholder="Selecione uma data"
             value={data}

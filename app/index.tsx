@@ -8,8 +8,6 @@ import { buscarVacinas } from '../app/storage/vacinasStrorage'
 import { exportarBackup, importarBackup } from './utils/backupService'
 import MenuModal from './components/MenuModal'
 
-const MASCOTE_IMG = require('../assets/images/mascote.jpeg');
-
 type StatusPet = "atrasada" | "proxima" | "em-dia" | "sem-vacina"
 
 type Vacina = {
@@ -32,23 +30,34 @@ function obterIniciais(nome: string) {
 }
 
 function obterUltimaVacinaDoTipo(idPet: string, idVacina: string, vacinasAtuais: Vacina[]) {
+
+  const variacoesDeId: Record<string, string[]> = {
+    "V11": ["V11", "v11"],
+    "Antirrábica": ["Antirrábica", "antirrabica"],
+    "Anti-cio": ["Anti-cio", "anticio"],
+    "Vanguard": ["Vanguard", "vanguard"]
+  };
+
+  const idsAceitos = variacoesDeId[idVacina] || [idVacina];
+
   const vacinasDoPet = vacinasAtuais.filter(
-    (v: Vacina) => v.idPet === idPet && v.idVacina === idVacina
-  )
-  if (vacinasDoPet.length === 0) return null
+    (v: Vacina) => v.idPet === idPet && idsAceitos.includes(v.idVacina)
+  );
+
+  if (vacinasDoPet.length === 0) return null;
 
   return vacinasDoPet.reduce((maisRecente: Vacina, atual: Vacina) => {
     return new Date(atual.data).getTime() > new Date(maisRecente.data).getTime()
       ? atual
-      : maisRecente
-  })
+      : maisRecente;
+  });
 }
 
 function obterStatusPet(idPet: string, vacinasAtuais: Vacina[]): StatusPet {
-  const ultimaV11 = obterUltimaVacinaDoTipo(idPet, "v11", vacinasAtuais)
-  const ultimaAntirrabica = obterUltimaVacinaDoTipo(idPet, "antirrabica", vacinasAtuais)
-  const ultimaVanguard = obterUltimaVacinaDoTipo(idPet, "vanguard", vacinasAtuais)
-  const ultimaAnticio = obterUltimaVacinaDoTipo(idPet, "anticio", vacinasAtuais)
+  const ultimaV11 = obterUltimaVacinaDoTipo(idPet, "V11", vacinasAtuais)
+  const ultimaAntirrabica = obterUltimaVacinaDoTipo(idPet, "Antirrábica", vacinasAtuais)
+  const ultimaVanguard = obterUltimaVacinaDoTipo(idPet, "Vanguard", vacinasAtuais)
+  const ultimaAnticio = obterUltimaVacinaDoTipo(idPet, "Anti-cio", vacinasAtuais)
 
   const ultimasVacinas = [ultimaV11, ultimaAntirrabica, ultimaVanguard, ultimaAnticio].filter(Boolean) as Vacina[]
 
@@ -89,9 +98,11 @@ export default function ClientesPage() {
       buscarVacinas()
     ]) as [any[], any[], any[]]
 
-    const clientesOrdenados = clientesDoBanco.sort((a: any, b: any) => 
-      a.nome?.localeCompare(b.nome)
-    );
+    const clientesOrdenados = clientesDoBanco.sort((a: any, b: any) => {
+      const nomeA = a.nome || '';
+      const nomeB = b.nome || '';
+      return nomeA.localeCompare(nomeB);
+    });
 
     setListaClientes(clientesOrdenados)
 
@@ -163,9 +174,10 @@ export default function ClientesPage() {
     })
   }
 
-  const clientesFiltrados = listaClientes.filter(cliente =>
-    cliente.nome?.toLowerCase().includes(busca.toLowerCase())
-  )
+  const clientesFiltrados = listaClientes.filter(cliente => {
+    const nomeCliente = cliente.nome || '';
+    return nomeCliente.toLowerCase().includes(busca.toLowerCase());
+  })
 
   return (
     <View style={styles.mainContainer}>

@@ -5,6 +5,8 @@ import { useCallback, useState } from 'react'
 import MessageModal from '../components/MessageModal'
 import MenuModal from '../components/MenuModal'
 import { buscarPets, salvarPets } from '../storage/petsStorage'
+import { buscarVacinas, salvarVacinas } from '../storage/vacinasStrorage'
+import { buscarServicos, salvarServicos } from '../storage/servicosStorage'
 
 const Colors = {
   bg: '#FFFFFF',
@@ -47,7 +49,7 @@ export default function Details() {
       async function carregarPet() {
         setLoading(true)
 
-        const listaPets = await buscarPets()
+        const listaPets = (await buscarPets()) || []
         const petEncontrado = listaPets.find((p: any) => p.id === id)
 
         if (petEncontrado) {
@@ -96,14 +98,31 @@ export default function Details() {
   }
 
   async function excluirPet() {
-    const listaPets = await buscarPets()
-    const novaLista = listaPets.filter((p: any) => p.id !== id)
+    try {
+      const [listaPets, allVacinas, allServicos] = await Promise.all([
+        buscarPets(),
+        buscarVacinas(),
+        buscarServicos()
+      ])
 
-    await salvarPets(novaLista)
+      const novaListaPets = (listaPets || []).filter((p: any) => p.id !== id)
 
-    setConfirmModalVisible(false)
-    setMenuVisible(false)
-    router.back()
+      const novaListaVacinas = (allVacinas || []).filter((v: any) => v.idPet !== id)
+      const novaListaServicos = (allServicos || []).filter((s: any) => s.idPet !== id)
+
+      await Promise.all([
+        salvarPets(novaListaPets),
+        salvarVacinas(novaListaVacinas),
+        salvarServicos(novaListaServicos)
+      ])
+
+      setConfirmModalVisible(false)
+      setMenuVisible(false)
+      router.back()
+    } 
+    catch (error) {
+      console.error("Erro ao excluir pet em cascata:", error)
+    }
   }
 
   return (

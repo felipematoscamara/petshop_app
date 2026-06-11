@@ -1,12 +1,4 @@
-import {
-  StyleSheet,
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  ActivityIndicator,
-  Platform
-} from 'react-native'
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, ActivityIndicator, Platform } from 'react-native'
 import { useEffect, useState } from 'react'
 import { useLocalSearchParams, router } from 'expo-router'
 import Header from '@/app/components/Header'
@@ -52,11 +44,14 @@ export default function EditarVacina() {
           buscarPets()
         ])
 
-        const vAtual = allVacinas.find((v: Vacina) => v.id === vacinaId)
+        const listaVacinasSegura = allVacinas || []
+        const listaPetsSegura = allPets || []
+
+        const vAtual = listaVacinasSegura.find((v: Vacina) => v.id === vacinaId)
 
         if (vAtual) {
           setVacinaAtual(vAtual)
-          setPet(allPets.find((p: any) => p.id === vAtual.idPet) || null)
+          setPet(listaPetsSegura.find((p: any) => p.id === vAtual.idPet) || null)
 
           setDose(vAtual.dose || '')
           setData(vAtual.data ? new Date(vAtual.data) : null)
@@ -64,11 +59,20 @@ export default function EditarVacina() {
 
           const vacinaInterna = vAtual.idVacina || ''
 
-          if (['v11', 'antirrabica', 'vanguard', 'anticio'].includes(vacinaInterna)) {
-            setVacinaSelecionada(vacinaInterna)
+          const mapaDePara: Record<string, string> = {
+            'v11': 'V11', 'V11': 'V11',
+            'antirrabica': 'Antirrábica', 'Antirrábica': 'Antirrábica',
+            'vanguard': 'Vanguard', 'Vanguard': 'Vanguard',
+            'anticio': 'Anti-cio', 'Anti-cio': 'Anti-cio'
+          }
+
+          const vacinaConvertida = mapaDePara[vacinaInterna]
+
+          if (vacinaConvertida) {
+            setVacinaSelecionada(vacinaConvertida)
             setOutraVacina('')
           } else {
-            setVacinaSelecionada('outro')
+            setVacinaSelecionada('Outro')
             setOutraVacina(vAtual.vacina || '')
           }
         } else {
@@ -89,17 +93,9 @@ export default function EditarVacina() {
     if (!vacinaAtual) return
 
     const nomeVacinaFinal =
-      vacinaSelecionada === 'outro'
+      vacinaSelecionada === 'Outro'
         ? outraVacina.trim()
-        : vacinaSelecionada === 'v11'
-          ? 'V11'
-          : vacinaSelecionada === 'antirrabica'
-            ? 'Antirrábica'
-            : vacinaSelecionada === 'vanguard'
-              ? 'Vanguard'
-              : vacinaSelecionada === 'anticio'
-                ? 'Anti-cio'
-                : ''
+        : vacinaSelecionada
 
     if (!vacinaSelecionada || !dose.trim() || !data || !proxima) {
       setMensagem('Preencha os campos obrigatórios (*)')
@@ -107,14 +103,15 @@ export default function EditarVacina() {
       return
     }
 
-    if (vacinaSelecionada === 'outro' && !outraVacina.trim()) {
+    if (vacinaSelecionada === 'Outro' && !outraVacina.trim()) {
       setMensagem('Digite o nome da vacina')
       setMessageVisible(true)
       return
     }
 
     try {
-      const todasVacinas = await buscarVacinas()
+
+      const todasVacinas = (await buscarVacinas()) || []
 
       const vacinasAtualizadas = todasVacinas.map((v: Vacina) => {
         if (v.id === vacinaAtual.id) {
@@ -124,14 +121,13 @@ export default function EditarVacina() {
             vacina: nomeVacinaFinal,
             dose: dose.trim(),
             data: data.toISOString(),
-            proxima: proxima ? proxima.toISOString() : null
+            proxima: proxima.toISOString() 
           }
         }
         return v
       })
 
       await salvarVacinas(vacinasAtualizadas)
-
       router.back()
     } catch (error) {
       console.error('Erro ao salvar vacina:', error)
@@ -142,12 +138,7 @@ export default function EditarVacina() {
 
   if (loading) {
     return (
-      <View
-        style={[
-          styles.mainContainer,
-          { justifyContent: 'center', alignItems: 'center' }
-        ]}
-      >
+      <View style={[styles.mainContainer, { justifyContent: 'center', alignItems: 'center' }]}>
         <ActivityIndicator size="large" color={Colors.primary} />
       </View>
     )
@@ -176,108 +167,83 @@ export default function EditarVacina() {
           <View style={styles.optionContainer}>
             <TouchableOpacity
               onPress={() => {
-                setVacinaSelecionada('v11')
+                setVacinaSelecionada('V11')
                 setOutraVacina('')
               }}
               style={[
                 styles.optionButton,
-                vacinaSelecionada === 'v11' && styles.optionButtonSelected
+                vacinaSelecionada === 'V11' && styles.optionButtonSelected
               ]}
               activeOpacity={0.85}
             >
-              <Text
-                style={[
-                  styles.optionText,
-                  vacinaSelecionada === 'v11' && styles.optionTextSelected
-                ]}
-              >
+              <Text style={[styles.optionText, vacinaSelecionada === 'V11' && styles.optionTextSelected]}>
                 V11
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               onPress={() => {
-                setVacinaSelecionada('antirrabica')
+                setVacinaSelecionada('Antirrábica')
                 setOutraVacina('')
               }}
               style={[
                 styles.optionButton,
-                vacinaSelecionada === 'antirrabica' && styles.optionButtonSelected
+                vacinaSelecionada === 'Antirrábica' && styles.optionButtonSelected
               ]}
               activeOpacity={0.85}
             >
-              <Text
-                style={[
-                  styles.optionText,
-                  vacinaSelecionada === 'antirrabica' && styles.optionTextSelected
-                ]}
-              >
+              <Text style={[styles.optionText, vacinaSelecionada === 'Antirrábica' && styles.optionTextSelected]}>
                 Antirrábica
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               onPress={() => {
-                setVacinaSelecionada('vanguard')
+                setVacinaSelecionada('Vanguard')
                 setOutraVacina('')
               }}
               style={[
                 styles.optionButton,
-                vacinaSelecionada === 'vanguard' && styles.optionButtonSelected
+                vacinaSelecionada === 'Vanguard' && styles.optionButtonSelected
               ]}
               activeOpacity={0.85}
             >
-              <Text
-                style={[
-                  styles.optionText,
-                  vacinaSelecionada === 'vanguard' && styles.optionTextSelected
-                ]}
-              >
+              <Text style={[styles.optionText, vacinaSelecionada === 'Vanguard' && styles.optionTextSelected]}>
                 Vanguard
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               onPress={() => {
-                setVacinaSelecionada('anticio')
+                setVacinaSelecionada('Anti-cio')
                 setOutraVacina('')
               }}
               style={[
                 styles.optionButton,
-                vacinaSelecionada === 'anticio' && styles.optionButtonSelected
+                vacinaSelecionada === 'Anti-cio' && styles.optionButtonSelected
               ]}
               activeOpacity={0.85}
             >
-              <Text
-                style={[
-                  styles.optionText,
-                  vacinaSelecionada === 'anticio' && styles.optionTextSelected
-                ]}
-              >
+              <Text style={[styles.optionText, vacinaSelecionada === 'Anti-cio' && styles.optionTextSelected]}>
                 Anti-cio
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => setVacinaSelecionada('outro')}
+              onPress={() => setVacinaSelecionada('Outro')}
               style={[
                 styles.optionButton,
-                vacinaSelecionada === 'outro' && styles.optionButtonSelected
+                vacinaSelecionada === 'Outro' && styles.optionButtonSelected
               ]}
               activeOpacity={0.85}
             >
-              <Text
-                style={[
-                  styles.optionText,
-                  vacinaSelecionada === 'outro' && styles.optionTextSelected
-                ]}
-              >
+              <Text style={[styles.optionText, vacinaSelecionada === 'Outro' && styles.optionTextSelected]}>
                 Outro
               </Text>
             </TouchableOpacity>
           </View>
 
-          {vacinaSelecionada === 'outro' && (
+          {vacinaSelecionada === 'Outro' && (
             <View style={{ marginTop: 12 }}>
               <TextInput
                 placeholder="Digite o nome da vacina"

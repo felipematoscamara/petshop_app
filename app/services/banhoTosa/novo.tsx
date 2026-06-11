@@ -1,6 +1,6 @@
 import { useLocalSearchParams, router } from 'expo-router'
-import { StyleSheet, TouchableOpacity, View, Text, Platform, TextInput } from 'react-native'
-import { useState } from 'react'
+import { StyleSheet, TouchableOpacity, View, Text, Platform, TextInput, ActivityIndicator } from 'react-native'
+import { useState, useEffect } from 'react'
 import { buscarPets } from '@/app/storage/petsStorage'
 import { buscarClientes, salvarClientes } from '@/app/storage/clientesStorage'
 import { buscarServicos, salvarServicos } from '@/app/storage/servicosStorage'
@@ -13,6 +13,9 @@ export default function NovoServico() {
   const { id } = useLocalSearchParams()
   const idPet = Array.isArray(id) ? id[0] : String(id)
 
+  const [pet, setPet] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
   const [messageVisible, setMessageVisible] = useState(false)
   const [mensagem, setMensagem] = useState('')
 
@@ -23,26 +26,24 @@ export default function NovoServico() {
   const [pontosOutro, setPontosOutro] = useState('')
   const [data, setData] = useState<Date | null>(null)
 
+  useEffect(() => {
+    async function carregarDadosIniciais() {
+      try {
+        setLoading(true)
+        const pets = (await buscarPets()) || []
+        const petEncontrado = pets.find((p: any) => p.id === idPet)
+        setPet(petEncontrado || null)
+      } catch (error) {
+        console.error('Erro ao carregar dados do pet:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    carregarDadosIniciais()
+  }, [idPet])
+
   async function registrarServico() {
-    const pets = await buscarPets()
-    const pet = pets.find((p: any) => p.id === idPet)
-
-    if (!pet) {
-      setMensagem(
-        'Ops! Não conseguimos localizar os dados deste pet. Você será redirecionado para a página inicial.'
-      )
-      setMessageVisible(true)
-      return
-    }
-
-    const clientes = await buscarClientes()
-    const cliente = clientes.find((c: any) => c.id === pet.idCliente)
-
-    if (!cliente) {
-      setMensagem('Ops! Não conseguimos localizar os dados deste cliente.')
-      setMessageVisible(true)
-      return
-    }
+    if (!pet) return
 
     if (!data || (!banho && !tosa && !outro)) {
       setMensagem('Preencha os campos obrigatórios (*)')
@@ -63,71 +64,111 @@ export default function NovoServico() {
     }
 
     const pontosDigitados = Number(pontosOutro)
-
     if (outro && (isNaN(pontosDigitados) || pontosDigitados <= 0)) {
       setMensagem('Informe uma quantidade de pontos válida')
       setMessageVisible(true)
       return
     }
 
-    const servicos = await buscarServicos()
+    try {
+      const clientes = (await buscarClientes()) || []
+      const clienteEncontrado = clientes.find((c: any) => c.id === pet.idCliente)
 
-    if (banho) {
-      const pontos = 10
+      if (!clienteEncontrado) {
+        setMensagem('Ops! Não conseguimos localizar os dados do dono deste pet.')
+        setMessageVisible(true)
+        return
+      }
 
-      servicos.push({
-        id: gerarServicoId(),
-        servico: 'Banho',
-        data: data.toISOString(),
-        pontos,
-        idPet: pet.id,
-        idCliente: cliente.id
+      const servicos = (await buscarServicos()) || []
+
+      let pontosAcumuladosNesseAtendimento = 0
+      const dataISO = data.toISOString()
+
+      if (banho) {
+        const pontosBanho = 10
+        servicos.push({
+          id: gerarServicoId(),
+          servico: 'Banho',
+          data: dataISO,
+          pontos: pontosBanho,
+          idPet: pet.id,
+          idCliente: clienteEncontrado.id
+        })
+        pontosAcumuladosNesseAtendimento += pontosBanho
+      }
+
+      if (tosa) {
+        const pontosTosa = 15
+        servicos.push({
+          id: gerarServicoId(),
+          servico: 'Tosa',
+          data: dataISO,
+          pontos: pontosTosa,
+          idPet: pet.id,
+          idCliente: clienteEncontrado.id
+        })
+        pontosAcumuladosNesseAtendimento += pontosTosa
+      }
+
+      if (outro) {
+        servicos.push({
+          id: gerarServicoId(),
+          servico: 'Outro', 
+          detalheOutro: outroServico.trim(), 
+          data: dataISO,
+          pontos: pontosDigitados,
+          idPet: pet.id,
+          idCliente: clienteEncontrado.id
+        })
+        pontosAcumuladosNesseAtendimento += pontosDigitados
+      }
+
+      const novaListaClientes = clientes.map((c: any) => {
+        if (c.id === clienteEncontrado.id) {
+          return {
+            ...c,
+            pontos: (c.pontos || 0) + pontosAcumuladosNesseAtendimento
+          }
+        }
+        return c
       })
 
-      cliente.pontos = (cliente.pontos || 0) + pontos
+      await salvarServicos(servicos)
+      await salvarClientes(novaListaClientes)
+
+      router.back()
+    } catch (error) {
+      console.error('Erro ao registrar serviço:', error)
+      setMensagem('Não foi possível salvar o atendimento. Tente novamente.')
+      setMessageVisible(true)
     }
+  }
 
-    if (tosa) {
-      const pontos = 15
-
-      servicos.push({
-        id: gerarServicoId(),
-        servico: 'Tosa',
-        data: data.toISOString(),
-        pontos,
-        idPet: pet.id,
-        idCliente: cliente.id
-      })
-
-      cliente.pontos = (cliente.pontos || 0) + pontos
-    }
-
-    if (outro) {
-      servicos.push({
-        id: gerarServicoId(),
-        servico: outroServico.trim(),
-        data: data.toISOString(),
-        pontos: pontosDigitados,
-        idPet: pet.id,
-        idCliente: cliente.id
-      })
-
-      cliente.pontos = (cliente.pontos || 0) + pontosDigitados
-    }
-
-    const novaListaClientes = clientes.map((c: any) =>
-      c.id === cliente.id ? cliente : c
+  if (loading) {
+    return (
+      <View style={[styles.mainContainer, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+      </View>
     )
+  }
 
-    await salvarServicos(servicos)
-    await salvarClientes(novaListaClientes)
-
-    router.back()
+  if (!pet) {
+    return (
+      <View style={styles.mainContainer}>
+        <MessageModal
+          visible={true}
+          mensagem="Ops! Não conseguimos localizar os dados deste pet. Você será redirecionado para a página inicial."
+          onClose={() => router.replace('/')} // Redirecionamento correto e seguro caso a URL falhe
+        />
+      </View>
+    )
   }
 
   return (
     <View style={styles.mainContainer}>
-      <Header titulo="Novo Serviço" />
+      
+      <Header titulo={`Novo Serviço: ${pet.nome}`} />
 
       <View style={styles.content}>
         <View style={styles.inputGroup}>
@@ -135,14 +176,10 @@ export default function NovoServico() {
 
           <View style={styles.optionContainer}>
             <TouchableOpacity
-              style={[
-                styles.optionButton,
-                banho && styles.optionButtonSelected
-              ]}
+              style={[styles.optionButton, banho && styles.optionButtonSelected]}
               onPress={() => {
                 const novoValor = !banho
                 setBanho(novoValor)
-
                 if (novoValor) {
                   setOutro(false)
                   setOutroServico('')
@@ -151,25 +188,16 @@ export default function NovoServico() {
               }}
               activeOpacity={0.85}
             >
-              <Text
-                style={[
-                  styles.optionText,
-                  banho && styles.optionTextSelected
-                ]}
-              >
+              <Text style={[styles.optionText, banho && styles.optionTextSelected]}>
                 Banho
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[
-                styles.optionButton,
-                tosa && styles.optionButtonSelected
-              ]}
+              style={[styles.optionButton, tosa && styles.optionButtonSelected]}
               onPress={() => {
                 const novoValor = !tosa
                 setTosa(novoValor)
-
                 if (novoValor) {
                   setOutro(false)
                   setOutroServico('')
@@ -178,25 +206,16 @@ export default function NovoServico() {
               }}
               activeOpacity={0.85}
             >
-              <Text
-                style={[
-                  styles.optionText,
-                  tosa && styles.optionTextSelected
-                ]}
-              >
+              <Text style={[styles.optionText, tosa && styles.optionTextSelected]}>
                 Tosa
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[
-                styles.optionButton,
-                outro && styles.optionButtonSelected
-              ]}
+              style={[styles.optionButton, outro && styles.optionButtonSelected]}
               onPress={() => {
                 const novoValor = !outro
                 setOutro(novoValor)
-
                 if (novoValor) {
                   setBanho(false)
                   setTosa(false)
@@ -207,12 +226,7 @@ export default function NovoServico() {
               }}
               activeOpacity={0.85}
             >
-              <Text
-                style={[
-                  styles.optionText,
-                  outro && styles.optionTextSelected
-                ]}
-              >
+              <Text style={[styles.optionText, outro && styles.optionTextSelected]}>
                 Outro
               </Text>
             </TouchableOpacity>
@@ -246,7 +260,6 @@ export default function NovoServico() {
 
         <View style={styles.inputGroup}>
           <Text style={styles.fieldLabel}>DATA DO SERVIÇO *</Text>
-
           <DateInput
             placeholder="Selecione uma data"
             value={data}
@@ -274,7 +287,6 @@ export default function NovoServico() {
     </View>
   )
 }
-
 const Colors = {
   bg: '#FFFFFF',
   bgSecundario: '#F8FAFC',

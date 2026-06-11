@@ -24,7 +24,7 @@ export default function EditarCliente(){
     useEffect(() => {
         async function carregarCliente() {
             try {
-                const todosClientes = await buscarClientes()
+                const todosClientes = (await buscarClientes()) || []
                 const cliente = todosClientes.find((c: any) => c.id === id)
 
                 if (cliente) {
@@ -52,7 +52,7 @@ export default function EditarCliente(){
         }
 
         try {
-            const todosClientes = await buscarClientes()
+            const todosClientes = (await buscarClientes()) || []
 
             const listaAtualizada = todosClientes.map((c: any) => {
                 if (c.id === id) {

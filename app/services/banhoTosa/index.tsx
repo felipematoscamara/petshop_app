@@ -28,6 +28,18 @@ const Colors = {
   accentBorder: '#DBEAFE',
 }
 
+function formatarDataSegura(dataRaw?: string) {
+  if (!dataRaw) return ''
+  
+  const dataLimpa = dataRaw.includes('T') ? dataRaw.split('T')[0] : dataRaw
+  const [ano, mes, dia] = dataLimpa.split('-').map(Number)
+  
+  const date = new Date(ano, mes - 1, dia)
+  if (isNaN(date.getTime())) return ''
+  
+  return date.toLocaleDateString('pt-BR')
+}
+
 export default function BanhoTosa() {
   const { id } = useLocalSearchParams()
 
@@ -43,7 +55,8 @@ export default function BanhoTosa() {
     if (!servicoSelecionado) return
 
     try {
-      const todosServicos = await buscarServicos()
+   
+      const todosServicos = (await buscarServicos()) || []
 
       const novaListaGeral = todosServicos.filter(
         (s: Servico) => String(s.id) !== String(servicoSelecionado.id)
@@ -70,9 +83,12 @@ export default function BanhoTosa() {
             buscarServicos()
           ])
 
-          const petEncontrado = allPets.find((p: any) => p.id === id)
+          const listaPetsSegura = allPets || []
+          const listaServicosSegura = allServicos || []
+
+          const petEncontrado = listaPetsSegura.find((p: any) => p.id === id)
           setPet(petEncontrado || null)
-          setListaServicos(allServicos)
+          setListaServicos(listaServicosSegura)
         } catch (error) {
           console.error('Erro ao carregar serviços:', error)
         } finally {
@@ -149,7 +165,7 @@ export default function BanhoTosa() {
           ListEmptyComponent={
             <View style={styles.emptyStateContainer}>
               <Text style={styles.vazioTexto}>
-                Nenhum serviço cadastrado para este pet.
+                Nenhuma atividade de banho ou tosa registrada para este pet.
               </Text>
             </View>
           }
@@ -175,7 +191,7 @@ export default function BanhoTosa() {
               <View style={styles.dividerCard} />
 
               <Text style={styles.cardInfo}>
-                Data: {new Date(item.data).toLocaleDateString('pt-BR')}
+                Data: {formatarDataSegura(item.data)}
               </Text>
             </TouchableOpacity>
           )}

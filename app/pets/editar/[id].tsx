@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import Header from "@/app/components/Header"
 import DateInput from "@/app/components/DateInput"
 import MessageModal from "@/app/components/MessageModal"
-
 import { buscarPets, salvarPets } from "@/app/storage/petsStorage"
 
 export default function EditarPet() {
@@ -27,7 +26,7 @@ export default function EditarPet() {
     useEffect(() => {
         async function carregarPet() {
             try {
-                const todosPets = await buscarPets()
+                const todosPets = (await buscarPets()) || []
                 const petEncontrado = todosPets.find((p: any) => p.id === idPet)
 
                 if (petEncontrado) {
@@ -78,7 +77,7 @@ export default function EditarPet() {
         }
 
         try {
-            const todosPets = await buscarPets()
+            const todosPets = (await buscarPets()) || []
 
             const listaAtualizada = todosPets.map((p: any) => {
                 if (p.id === idPet) {

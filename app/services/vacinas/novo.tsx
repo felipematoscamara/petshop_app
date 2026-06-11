@@ -27,7 +27,7 @@ export default function NovaVacina() {
         ? outraVacina.trim()
         : vacinaSelecionada.trim()
 
-    const pets = await buscarPets()
+    const pets = await buscarPets() || []
     const pet = pets.find((p: any) => p.id === idPet)
 
     if (!pet) {
@@ -48,7 +48,7 @@ export default function NovaVacina() {
       return
     }
 
-    const vacinas = await buscarVacinas()
+    const vacinas = await buscarVacinas() || []
 
     vacinas.push({
       id: gerarVacinaId(),
@@ -75,17 +75,20 @@ export default function NovaVacina() {
 
           <View style={styles.optionContainer}>
             <TouchableOpacity
-              onPress={() => setVacinaSelecionada('v11')}
+              onPress={() => {
+                setVacinaSelecionada('V11')
+                setOutraVacina('')
+              }}
               style={[
                 styles.optionButton,
-                vacinaSelecionada === 'v11' && styles.optionButtonSelected
+                vacinaSelecionada === 'V11' && styles.optionButtonSelected
               ]}
               activeOpacity={0.85}
             >
               <Text
                 style={[
                   styles.optionText,
-                  vacinaSelecionada === 'v11' && styles.optionTextSelected
+                  vacinaSelecionada === 'V11' && styles.optionTextSelected
                 ]}
               >
                 V11
@@ -93,17 +96,20 @@ export default function NovaVacina() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => setVacinaSelecionada('antirrabica')}
+              onPress={() => {
+                setVacinaSelecionada('Antirrábica')
+                setOutraVacina('')
+              }}
               style={[
                 styles.optionButton,
-                vacinaSelecionada === 'antirrabica' && styles.optionButtonSelected
+                vacinaSelecionada === 'Antirrábica' && styles.optionButtonSelected
               ]}
               activeOpacity={0.85}
             >
               <Text
                 style={[
                   styles.optionText,
-                  vacinaSelecionada === 'antirrabica' && styles.optionTextSelected
+                  vacinaSelecionada === 'Antirrábica' && styles.optionTextSelected
                 ]}
               >
                 Antirrábica
@@ -111,17 +117,20 @@ export default function NovaVacina() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => setVacinaSelecionada('vanguard')}
+              onPress={() => {
+                setVacinaSelecionada('Vanguard')
+                setOutraVacina('')
+              }}
               style={[
                 styles.optionButton,
-                vacinaSelecionada === 'vanguard' && styles.optionButtonSelected
+                vacinaSelecionada === 'Vanguard' && styles.optionButtonSelected
               ]}
               activeOpacity={0.85}
             >
               <Text
                 style={[
                   styles.optionText,
-                  vacinaSelecionada === 'vanguard' && styles.optionTextSelected
+                  vacinaSelecionada === 'Vanguard' && styles.optionTextSelected
                 ]}
               >
                 Vanguard
@@ -129,17 +138,20 @@ export default function NovaVacina() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => setVacinaSelecionada('anticio')}
+              onPress={() => {
+                setVacinaSelecionada('Anti-cio')
+                setOutraVacina('')
+              }}
               style={[
                 styles.optionButton,
-                vacinaSelecionada === 'anticio' && styles.optionButtonSelected
+                vacinaSelecionada === 'Anti-cio' && styles.optionButtonSelected
               ]}
               activeOpacity={0.85}
             >
               <Text
                 style={[
                   styles.optionText,
-                  vacinaSelecionada === 'anticio' && styles.optionTextSelected
+                  vacinaSelecionada === 'Anti-cio' && styles.optionTextSelected
                 ]}
               >
                 Anti-cio

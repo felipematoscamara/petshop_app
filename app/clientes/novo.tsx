@@ -26,7 +26,7 @@ export default function NovoCliente() {
       pontos: 0
     }
 
-    const listaClientes = await buscarClientes()
+    const listaClientes = (await buscarClientes()) || []
     listaClientes.push(novoCliente)
     await salvarClientes(listaClientes)
 
